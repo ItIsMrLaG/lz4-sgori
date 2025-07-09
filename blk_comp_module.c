@@ -61,6 +61,16 @@ static int blk_comp_disk_delete(const char *arg, const struct kernel_param *kp) 
 	return 0;
 }
 
+static const struct kernel_param_ops blk_comp_map_ops = {
+	.set = blk_comp_disk_create,
+	.get = NULL,
+};
+
+static const struct kernel_param_ops blk_comp_unmap_ops = {
+	.set = blk_comp_disk_delete,
+	.get = NULL,
+};
+
 static int __init blk_comp_init(void) {
 	blk_comp.major = register_blkdev(BLK_COMP_MAJOR, BLK_COMP_NAME);
 
@@ -84,16 +94,6 @@ static void __exit blk_comp_exit(void) {
 
 	pr_info("Module unloaded successfully");
 }
-
-static const struct kernel_param_ops blk_comp_map_ops = {
-	.set = blk_comp_disk_create,
-	.get = NULL,
-};
-
-static const struct kernel_param_ops blk_comp_unmap_ops = {
-	.set = blk_comp_disk_delete,
-	.get = NULL,
-};
 
 module_param_cb(blk_comp_mapper, &blk_comp_map_ops, NULL, S_IWUSR);
 MODULE_PARM_DESC(blk_comp_mapper, "Map to existing block device");

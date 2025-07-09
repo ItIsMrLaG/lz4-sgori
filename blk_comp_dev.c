@@ -27,12 +27,14 @@ void blk_comp_dev_free(struct blk_comp_dev **dev_ptr) {
 
 	kfree(bcdev);
 	*dev_ptr = NULL;
+
+	pr_info("Released block device context");
 }
 
 // Allocate block device context
 int blk_comp_dev_alloc(struct blk_comp_dev **dev_ptr) {
 	int ret;
-	struct blk_comp_dev *bcdev = *dev_ptr;
+	struct blk_comp_dev *bcdev = NULL;
 	struct underlying_dev *under_dev = NULL;
 	struct gendisk *disk = NULL;
 
@@ -56,6 +58,9 @@ int blk_comp_dev_alloc(struct blk_comp_dev **dev_ptr) {
 		goto alloc_err;
 	}
 
+	*dev_ptr = bcdev;
+
+	pr_info("Allocated block device context");
 	return 0;
 
 alloc_err:
@@ -76,11 +81,18 @@ int blk_comp_dev_init(struct blk_comp_dev *bcdev, const char *dev_path, int majo
 	}
 
 	ret = gendisk_init(disk, bcdev, major, first_minor);
-	if (ret < 0) {
+	if (ret) {
 		pr_err("Failed to initialize generic disk");
 		return ret;
 	}
 
+	ret = add_disk(disk);
+	if (ret) {
+		pr_err("Failed to add generic disk");
+		return ret;
+	}
+
+	pr_info("Initialized block device");
 	return 0;
 }
 

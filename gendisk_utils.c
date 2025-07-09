@@ -5,6 +5,8 @@
  * This file is released under the GPL.
  */
 
+#include <linux/nodemask_types.h>
+
 #include "include/gendisk_utils.h"
 
 static const struct block_device_operations bcdev_ops = {
@@ -23,18 +25,23 @@ void gendisk_free(struct gendisk **disk_ptr) {
 
 	kfree(disk);
 	*disk_ptr = NULL;
+
+	pr_info("Released generic disk context");
 }
 
 // Allocate generic disk context
 int gendisk_alloc(struct gendisk **disk_ptr) {
-	struct gendisk *disk = *disk_ptr;
+	struct gendisk *disk = NULL;
 
-	disk = kzalloc(sizeof(*disk_ptr), GFP_KERNEL);
+	disk = blk_alloc_disk(NULL, NUMA_NO_NODE);
 	if (disk == NULL) {
 		pr_err("Failed to allocate generic disk context");
 		goto alloc_err;
 	}
 
+	*disk_ptr = disk;
+
+	pr_info("Allocated generic disk context");
 	return 0;
 
 alloc_err:
@@ -57,6 +64,18 @@ int gendisk_init(struct gendisk *disk, struct blk_comp_dev *bcdev, int major, in
 
 	set_capacity(disk, get_capacity(bcdev->under_dev->bdev->bd_disk));
 
-	ret = snprintf(disk->disk_name, DISK_NAME_LEN, "blk-comp%d", disk->first_minor);
-	return ret;
+	ret = snprintf(disk->disk_name, DISK_NAME_LEN, "blk-comp-%d", disk->first_minor);
+	if (ret < 0) {
+		pr_err("Failed to write generic disk name");
+		return ret;
+	}
+
+	ret = add_disk(disk);
+	if (ret) {
+		pr_err("Failed to add generic disk: %s", disk->disk_name);
+		return ret;
+	}
+
+	pr_info("Initialized generic disk:, %s", disk->disk_name);
+	return 0;
 }

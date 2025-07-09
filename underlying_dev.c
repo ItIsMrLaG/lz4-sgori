@@ -26,11 +26,13 @@ void underlying_dev_free(struct underlying_dev **dev_ptr) {
 
 	kfree(under_dev);
 	*dev_ptr = NULL;
+
+	pr_info("Released underlying device context");
 }
 
 // Allocate underlying device context
 int underlying_dev_alloc(struct underlying_dev **dev_ptr) {
-	struct underlying_dev *under_dev = *dev_ptr;
+	struct underlying_dev *under_dev = NULL;
 	struct bio_set *bset = NULL;
 
 	under_dev = kzalloc(sizeof(*under_dev), GFP_KERNEL);
@@ -46,6 +48,9 @@ int underlying_dev_alloc(struct underlying_dev **dev_ptr) {
 		goto alloc_err;
 	}
 
+	*dev_ptr = under_dev;
+
+	pr_info("Allocated underlying device context");
 	return 0;
 
 alloc_err:
@@ -62,7 +67,7 @@ int underlying_dev_init(struct underlying_dev *under_dev, const char *dev_path) 
 
 	fbdev = bdev_file_open_by_path(dev_path, BLK_OPEN_READ | BLK_OPEN_WRITE, under_dev, NULL);
 	if (IS_ERR_OR_NULL(fbdev)) {
-		pr_err("Failed to open file associated with device");
+		pr_err("Failed to open file associated with device: %s", dev_path);
 		return PTR_ERR(fbdev);
 	}
 
@@ -76,5 +81,7 @@ int underlying_dev_init(struct underlying_dev *under_dev, const char *dev_path) 
 
 	under_dev->bdev = bdev;
 	under_dev->fbdev = fbdev;
+
+	pr_info("Initialized underlying device: %s", dev_path);
 	return 0;
 }
