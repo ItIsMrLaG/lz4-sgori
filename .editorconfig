@@ -1,0 +1,38 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+indent_size = 2
+trim_trailing_whitespace = true
+
+[{*.c,*.h,*.cpp}]
+indent_style = tab
+indent_size = 8
+
+[{Kbuild,Makefile,*.mk,*.sh}]
+indent_style = tab
+indent_size = 8
+
+[*.md]
+indent_size = 4
+trim_trailing_whitespace = false
+eclint_indent_style = unset
+
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+[*.{pl,pm}]
+indent_style = tab
+indent_size = 4
+
+[*.py]
+indent_style = space
+indent_size = 4
+
+[.gitattributes,.gitignore,.gitmodules]
+indent_style = tab
+indent_size = 8
