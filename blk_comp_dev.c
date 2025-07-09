@@ -86,12 +86,6 @@ int blk_comp_dev_init(struct blk_comp_dev *bcdev, const char *dev_path, int majo
 		return ret;
 	}
 
-	ret = add_disk(disk);
-	if (ret) {
-		pr_err("Failed to add generic disk");
-		return ret;
-	}
-
 	pr_info("Initialized block device");
 	return 0;
 }
