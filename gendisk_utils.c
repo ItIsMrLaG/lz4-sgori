@@ -9,13 +9,14 @@
 
 #include "include/gendisk_utils.h"
 
-static const struct block_device_operations bcdev_ops = {
+// Supported block device operations
+static const struct block_device_operations blk_comp_disk_ops = {
 	.owner = THIS_MODULE,
 	.submit_bio = blk_comp_dev_submit_bio,
 };
 
 // Free generic disk context
-void gendisk_free(struct gendisk **disk_ptr) {
+void blk_comp_gendisk_free(struct gendisk **disk_ptr) {
 	struct gendisk *disk = *disk_ptr;
 
 	if (disk == NULL) return;
@@ -30,33 +31,29 @@ void gendisk_free(struct gendisk **disk_ptr) {
 }
 
 // Allocate generic disk context
-int gendisk_alloc(struct gendisk **disk_ptr) {
+int blk_comp_gendisk_alloc(struct gendisk **disk_ptr) {
 	struct gendisk *disk = NULL;
 
 	disk = blk_alloc_disk(NULL, NUMA_NO_NODE);
 	if (disk == NULL) {
 		pr_err("Failed to allocate generic disk context");
-		goto alloc_err;
+		return -ENOMEM;
 	}
 
 	*disk_ptr = disk;
 
 	pr_info("Allocated generic disk context");
 	return 0;
-
-alloc_err:
-	gendisk_free(&disk);
-	return -ENOMEM;
 }
 
-// Initialize generic disk
-int gendisk_init(struct gendisk *disk, struct blk_comp_dev *bcdev, int major, int first_minor) {
+// Add generic disk
+int blk_comp_gendisk_add(struct gendisk *disk, struct blk_comp_dev *bcdev, int major, int first_minor) {
 	int ret = 0;
 
 	disk->major = major;
 	disk->first_minor = first_minor;
 	disk->minors = 1;
-	disk->fops = &bcdev_ops;
+	disk->fops = &blk_comp_disk_ops;
 	disk->private_data = bcdev;
 
 	// Disable partition support

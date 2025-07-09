@@ -20,12 +20,12 @@ struct underlying_dev {
 };
 
 // Allocate underlying device context
-int underlying_dev_alloc(struct underlying_dev **dev_ptr);
+int blk_comp_under_dev_alloc(struct underlying_dev **dev_ptr);
 
-// Initialize underlying device
-int underlying_dev_init(struct underlying_dev *under_dev, const char *dev_path);
+// Open underlying device
+int blk_comp_under_dev_open(struct underlying_dev *under_dev, const char *dev_path);
 
 // Free underlying device context
-void underlying_dev_free(struct underlying_dev **dev_ptr);
+void blk_comp_under_dev_free(struct underlying_dev **dev_ptr);
 
 #endif

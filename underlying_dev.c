@@ -6,11 +6,12 @@
  */
 
 #include "include/underlying_dev.h"
+#include "linux/bio.h"
 
-#define POOL_SIZE 1024
+#define BIO_SET_POOL_SIZE 1024
 
-// Free the underlying device context
-void underlying_dev_free(struct underlying_dev **dev_ptr) {
+// Free underlying device context
+void blk_comp_under_dev_free(struct underlying_dev **dev_ptr) {
 	struct underlying_dev *under_dev = *dev_ptr;
 
 	if (under_dev == NULL) return;
@@ -21,8 +22,10 @@ void underlying_dev_free(struct underlying_dev **dev_ptr) {
 	if (fbdev != NULL)
 		bdev_fput(fbdev);
 
-	if (bset != NULL)
+	if (bset != NULL) {
+		bioset_exit(bset);
 		kfree(bset);
+	}
 
 	kfree(under_dev);
 	*dev_ptr = NULL;
@@ -31,7 +34,7 @@ void underlying_dev_free(struct underlying_dev **dev_ptr) {
 }
 
 // Allocate underlying device context
-int underlying_dev_alloc(struct underlying_dev **dev_ptr) {
+int blk_comp_under_dev_alloc(struct underlying_dev **dev_ptr) {
 	struct underlying_dev *under_dev = NULL;
 	struct bio_set *bset = NULL;
 
@@ -54,12 +57,12 @@ int underlying_dev_alloc(struct underlying_dev **dev_ptr) {
 	return 0;
 
 alloc_err:
-	underlying_dev_free(&under_dev);
+	blk_comp_under_dev_free(&under_dev);
 	return -ENOMEM;
 }
 
-// Initialize underlying device
-int underlying_dev_init(struct underlying_dev *under_dev, const char *dev_path) {
+// Open underlying device
+int blk_comp_under_dev_open(struct underlying_dev *under_dev, const char *dev_path) {
 	int ret = 0;
 	struct block_device *bdev = NULL;
 	struct file *fbdev = NULL;
@@ -72,16 +75,15 @@ int underlying_dev_init(struct underlying_dev *under_dev, const char *dev_path) 
 	}
 
 	bdev = file_bdev(fbdev);
+	under_dev->bdev = bdev;
+	under_dev->fbdev = fbdev;
 
-	ret = bioset_init(bset, POOL_SIZE, 0, BIOSET_NEED_BVECS);
+	ret = bioset_init(bset, BIO_SET_POOL_SIZE, 0, BIOSET_NEED_BVECS);
 	if (ret) {
 		pr_err("Failed to initialize bio set");
 		return ret;
 	}
 
-	under_dev->bdev = bdev;
-	under_dev->fbdev = fbdev;
-
-	pr_info("Initialized underlying device: %s", dev_path);
+	pr_info("Opened underlying device: %s", dev_path);
 	return 0;
 }

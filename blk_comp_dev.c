@@ -6,9 +6,9 @@
  */
 
 #include "include/blk_comp_dev.h"
-#include "include/underlying_dev.h"
 #include "include/gendisk_utils.h"
 
+// Free block device context
 void blk_comp_dev_free(struct blk_comp_dev **dev_ptr) {
 	struct blk_comp_dev *bcdev = *dev_ptr;
 
@@ -17,13 +17,8 @@ void blk_comp_dev_free(struct blk_comp_dev **dev_ptr) {
 	struct underlying_dev *under_dev = bcdev->under_dev;
 	struct gendisk *disk = bcdev->disk;
 
-	if (under_dev != NULL) {
-		underlying_dev_free(&under_dev);
-	}
-
-	if (disk != NULL) {
-		gendisk_free(&disk);
-	}
+	blk_comp_gendisk_free(&disk);
+	blk_comp_under_dev_free(&under_dev);
 
 	kfree(bcdev);
 	*dev_ptr = NULL;
@@ -41,17 +36,17 @@ int blk_comp_dev_alloc(struct blk_comp_dev **dev_ptr) {
 	bcdev = kzalloc(sizeof(*bcdev), GFP_KERNEL);
 	if (bcdev == NULL) {
 		pr_err("Failed to allocate block device context");
-		goto alloc_err;
+		return -ENOMEM;
 	}
 
-	ret = underlying_dev_alloc(&under_dev);
+	ret = blk_comp_under_dev_alloc(&under_dev);
 	bcdev->under_dev = under_dev;
 	if (ret) {
 		pr_err("Failed to allocate underlying device context");
 		goto alloc_err;
 	}
 
-	ret = gendisk_alloc(&disk);
+	ret = blk_comp_gendisk_alloc(&disk);
 	bcdev->disk = disk;
 	if (ret) {
 		pr_err("Failed to allocate generic disk context");
@@ -65,7 +60,7 @@ int blk_comp_dev_alloc(struct blk_comp_dev **dev_ptr) {
 
 alloc_err:
 	blk_comp_dev_free(&bcdev);
-	return -ENOMEM;
+	return ret;
 }
 
 // Initialize the device to be managed by the driver
@@ -74,15 +69,15 @@ int blk_comp_dev_init(struct blk_comp_dev *bcdev, const char *dev_path, int majo
 	struct underlying_dev *under_dev = bcdev->under_dev;
 	struct gendisk *disk = bcdev->disk;
 
-	ret = underlying_dev_init(under_dev, dev_path);
+	ret = blk_comp_under_dev_open(under_dev, dev_path);
 	if (ret) {
-		pr_err("Failed to initialize underlying device");
+		pr_err("Failed to open underlying device");
 		return ret;
 	}
 
-	ret = gendisk_init(disk, bcdev, major, first_minor);
+	ret = blk_comp_gendisk_add(disk, bcdev, major, first_minor);
 	if (ret) {
-		pr_err("Failed to initialize generic disk");
+		pr_err("Failed to add generic disk");
 		return ret;
 	}
 
