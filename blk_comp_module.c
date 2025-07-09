@@ -95,11 +95,11 @@ static void __exit blk_comp_exit(void) {
 	pr_info("Module unloaded successfully");
 }
 
-module_param_cb(blk_comp_mapper, &blk_comp_map_ops, NULL, S_IWUSR);
-MODULE_PARM_DESC(blk_comp_mapper, "Map to existing block device");
+module_param_cb(mapper, &blk_comp_map_ops, NULL, S_IWUSR);
+MODULE_PARM_DESC(mapper, "Map to existing block device");
 
-module_param_cb(blk_comp_unmapper, &blk_comp_unmap_ops, NULL, S_IWUSR);
-MODULE_PARM_DESC(blk_comp_unmapper, "Unmap from existing block device");
+module_param_cb(unmapper, &blk_comp_unmap_ops, NULL, S_IWUSR);
+MODULE_PARM_DESC(unmapper, "Unmap from existing block device");
 
 module_init(blk_comp_init);
 module_exit(blk_comp_exit);

@@ -76,6 +76,6 @@ int gendisk_init(struct gendisk *disk, struct blk_comp_dev *bcdev, int major, in
 		return ret;
 	}
 
-	pr_info("Initialized generic disk:, %s", disk->disk_name);
+	pr_info("Initialized generic disk: %s", disk->disk_name);
 	return 0;
 }
