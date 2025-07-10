@@ -61,6 +61,7 @@ static int blk_comp_disk_delete(const char *arg, const struct kernel_param *kp) 
 	}
 
 	blk_comp_dev_free(&bcdev);
+	bcomp.bcdev = bcdev;
 
 	pr_info("Device unmapped successfully");
 	return 0;

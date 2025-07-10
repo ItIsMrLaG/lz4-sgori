@@ -24,7 +24,6 @@ void blk_comp_gendisk_free(struct gendisk **disk_ptr) {
 	del_gendisk(disk);
 	put_disk(disk);
 
-	kfree(disk);
 	*disk_ptr = NULL;
 
 	pr_info("Released generic disk context");
