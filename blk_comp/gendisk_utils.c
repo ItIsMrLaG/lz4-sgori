@@ -5,9 +5,17 @@
  * This file is released under the GPL.
  */
 
+#include <asm-generic/errno-base.h>
+#include <linux/blkdev.h>
+#include <linux/init.h>
 #include <linux/nodemask_types.h>
+#include <linux/printk.h>
+#include <linux/sprintf.h>
+#include <linux/stddef.h>
 
 #include "include/gendisk_utils.h"
+
+#include "include/blk_comp_dev.h"
 
 // Supported block device operations
 static const struct block_device_operations blk_comp_disk_ops = {

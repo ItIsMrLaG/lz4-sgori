@@ -8,6 +8,9 @@
 #ifndef BLK_COMP_DEVICE
 #define BLK_COMP_DEVICE
 
+#include <linux/blk_types.h>
+#include <linux/blkdev.h>
+
 #include "underlying_dev.h"
 
 // Struct representing a device to be managed by the driver

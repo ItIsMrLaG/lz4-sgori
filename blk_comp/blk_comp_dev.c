@@ -5,9 +5,18 @@
  * This file is released under the GPL.
  */
 
+#include <asm-generic/errno-base.h>
+#include <linux/blk_types.h>
+#include <linux/blkdev.h>
+#include <linux/gfp_types.h>
+#include <linux/printk.h>
+#include <linux/slab.h>
+#include <linux/stddef.h>
+
 #include "include/blk_comp_dev.h"
 
 #include "include/gendisk_utils.h"
+#include "include/underlying_dev.h"
 
 // Free block device context
 void blk_comp_dev_free(struct blk_comp_dev **dev_ptr)

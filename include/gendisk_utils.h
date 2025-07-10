@@ -8,6 +8,8 @@
 #ifndef GENDISK_UTILS
 #define GENDISK_UTILS
 
+#include <linux/blkdev.h>
+
 #include "blk_comp_dev.h"
 
 // Allocate generic disk context

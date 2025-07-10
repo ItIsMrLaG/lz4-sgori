@@ -5,6 +5,16 @@
  * This file is released under the GPL.
  */
 
+#include <asm-generic/errno-base.h>
+#include <linux/bio.h>
+#include <linux/blkdev.h>
+#include <linux/err.h>
+#include <linux/fs.h>
+#include <linux/gfp_types.h>
+#include <linux/printk.h>
+#include <linux/slab.h>
+#include <linux/stddef.h>
+
 #include "include/underlying_dev.h"
 
 #define BIO_SET_POOL_SIZE 1024
@@ -77,7 +87,7 @@ int blk_comp_under_dev_open(struct underlying_dev *under_dev,
 	if (IS_ERR_OR_NULL(fbdev)) {
 		pr_err("Failed to open file associated with device: %s",
 		       dev_path);
-		return PTR_ERR(fbdev);
+		return (int)PTR_ERR(fbdev);
 	}
 
 	bdev		 = file_bdev(fbdev);

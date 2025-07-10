@@ -5,9 +5,14 @@
  * This file is released under the GPL.
  */
 
+#include <asm-generic/errno-base.h>
+#include <linux/blkdev.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
+#include <linux/printk.h>
+#include <linux/stat.h>
+#include <linux/stddef.h>
 
 #include "include/blk_comp_module.h"
 
@@ -103,7 +108,7 @@ static void __exit blk_comp_exit(void)
 
 	blk_comp_dev_free(&bcdev);
 
-	unregister_blkdev(bcomp.major, BLK_COMP_NAME);
+	unregister_blkdev((unsigned int)bcomp.major, BLK_COMP_NAME);
 
 	pr_info("Module unloaded successfully");
 }
