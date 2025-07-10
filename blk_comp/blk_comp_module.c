@@ -7,7 +7,7 @@
 
 #include <linux/init.h>
 #include <linux/module.h>
-#include "linux/moduleparam.h"
+#include <linux/moduleparam.h>
 
 #include "include/blk_comp_module.h"
 #include "include/blk_comp_dev.h"

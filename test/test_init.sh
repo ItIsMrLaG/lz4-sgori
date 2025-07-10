@@ -1,7 +1,7 @@
 set -e
 
 make
-insmod blk_comp.ko
+insmod build/blk_comp.ko
 
 modprobe brd rd_nr=1 rd_size=307200 max_part=0
 

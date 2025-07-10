@@ -8,9 +8,6 @@ COMPILE_COMMANDS := $(PWD)/compile_commands.json
 
 .PHONY: clean
 
-obj-m := blk_comp.o
-blk_comp-y := blk_comp_module.o blk_comp_dev.o underlying_dev.o gendisk_utils.o
-
 all: build
 
 build:

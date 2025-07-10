@@ -6,7 +6,6 @@
  */
 
 #include "include/underlying_dev.h"
-#include "linux/bio.h"
 
 #define BIO_SET_POOL_SIZE 1024
 
