@@ -14,7 +14,8 @@
 int blk_comp_gendisk_alloc(struct gendisk **disk_ptr);
 
 // Add generic disk
-int blk_comp_gendisk_add(struct gendisk *disk, struct blk_comp_dev *bcdev, int major, int first_minor);
+int blk_comp_gendisk_add(struct gendisk *disk, struct blk_comp_dev *bcdev,
+			 int major, int first_minor);
 
 // Free generic disk context
 void blk_comp_gendisk_free(struct gendisk **disk_ptr);

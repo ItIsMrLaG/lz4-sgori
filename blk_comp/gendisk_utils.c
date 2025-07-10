@@ -11,15 +11,17 @@
 
 // Supported block device operations
 static const struct block_device_operations blk_comp_disk_ops = {
-	.owner = THIS_MODULE,
+	.owner	    = THIS_MODULE,
 	.submit_bio = blk_comp_dev_submit_bio,
 };
 
 // Free generic disk context
-void blk_comp_gendisk_free(struct gendisk **disk_ptr) {
+void blk_comp_gendisk_free(struct gendisk **disk_ptr)
+{
 	struct gendisk *disk = *disk_ptr;
 
-	if (disk == NULL) return;
+	if (disk == NULL)
+		return;
 
 	del_gendisk(disk);
 	put_disk(disk);
@@ -30,7 +32,8 @@ void blk_comp_gendisk_free(struct gendisk **disk_ptr) {
 }
 
 // Allocate generic disk context
-int blk_comp_gendisk_alloc(struct gendisk **disk_ptr) {
+int blk_comp_gendisk_alloc(struct gendisk **disk_ptr)
+{
 	struct gendisk *disk = NULL;
 
 	disk = blk_alloc_disk(NULL, NUMA_NO_NODE);
@@ -46,13 +49,15 @@ int blk_comp_gendisk_alloc(struct gendisk **disk_ptr) {
 }
 
 // Add generic disk
-int blk_comp_gendisk_add(struct gendisk *disk, struct blk_comp_dev *bcdev, int major, int first_minor) {
+int blk_comp_gendisk_add(struct gendisk *disk, struct blk_comp_dev *bcdev,
+			 int major, int first_minor)
+{
 	int ret = 0;
 
-	disk->major = major;
-	disk->first_minor = first_minor;
-	disk->minors = 1;
-	disk->fops = &blk_comp_disk_ops;
+	disk->major	   = major;
+	disk->first_minor  = first_minor;
+	disk->minors	   = 1;
+	disk->fops	   = &blk_comp_disk_ops;
 	disk->private_data = bcdev;
 
 	// Disable partition support
@@ -60,7 +65,8 @@ int blk_comp_gendisk_add(struct gendisk *disk, struct blk_comp_dev *bcdev, int m
 
 	set_capacity(disk, get_capacity(bcdev->under_dev->bdev->bd_disk));
 
-	ret = snprintf(disk->disk_name, DISK_NAME_LEN, "blk-comp-%d", disk->first_minor);
+	ret = snprintf(disk->disk_name, DISK_NAME_LEN, "blk-comp-%d",
+		       disk->first_minor);
 	if (ret < 0) {
 		pr_err("Failed to write generic disk name");
 		return ret;

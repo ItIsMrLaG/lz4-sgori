@@ -10,17 +10,19 @@
 #include <linux/moduleparam.h>
 
 #include "include/blk_comp_module.h"
+
 #include "include/blk_comp_dev.h"
 
-#define BLK_COMP_MAJOR 0
+#define BLK_COMP_MAJOR	     0
 #define BLK_COMP_FIRST_MINOR 0
-#define BLK_COMP_NAME "blk-comp-dev"
+#define BLK_COMP_NAME	     "blk-comp-dev"
 
 static struct blk_comp bcomp = {};
 
 // Create disk over device at specified path
-static int blk_comp_disk_create(const char *arg, const struct kernel_param *kp) {
-	int ret = 0;
+static int blk_comp_disk_create(const char *arg, const struct kernel_param *kp)
+{
+	int		     ret   = 0;
 	struct blk_comp_dev *bcdev = bcomp.bcdev;
 
 	if (bcdev != NULL) {
@@ -52,7 +54,8 @@ alloc_err:
 }
 
 // Remove existing disk
-static int blk_comp_disk_delete(const char *arg, const struct kernel_param *kp) {
+static int blk_comp_disk_delete(const char *arg, const struct kernel_param *kp)
+{
 	struct blk_comp_dev *bcdev = bcomp.bcdev;
 
 	if (bcdev == NULL) {
@@ -80,7 +83,8 @@ static const struct kernel_param_ops blk_comp_unmap_ops = {
 };
 
 // Initialize module
-static int __init blk_comp_init(void) {
+static int __init blk_comp_init(void)
+{
 	bcomp.major = register_blkdev(BLK_COMP_MAJOR, BLK_COMP_NAME);
 
 	if (bcomp.major < 0) {
@@ -93,7 +97,8 @@ static int __init blk_comp_init(void) {
 }
 
 // Remove module
-static void __exit blk_comp_exit(void) {
+static void __exit blk_comp_exit(void)
+{
 	struct blk_comp_dev *bcdev = bcomp.bcdev;
 
 	blk_comp_dev_free(&bcdev);

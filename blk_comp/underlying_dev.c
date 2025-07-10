@@ -10,13 +10,15 @@
 #define BIO_SET_POOL_SIZE 1024
 
 // Free underlying device context
-void blk_comp_under_dev_free(struct underlying_dev **dev_ptr) {
+void blk_comp_under_dev_free(struct underlying_dev **dev_ptr)
+{
 	struct underlying_dev *under_dev = *dev_ptr;
 
-	if (under_dev == NULL) return;
+	if (under_dev == NULL)
+		return;
 
-	struct file *fbdev = under_dev->fbdev;
-	struct bio_set *bset = under_dev->bset;
+	struct file    *fbdev = under_dev->fbdev;
+	struct bio_set *bset  = under_dev->bset;
 
 	if (fbdev != NULL)
 		bdev_fput(fbdev);
@@ -33,9 +35,10 @@ void blk_comp_under_dev_free(struct underlying_dev **dev_ptr) {
 }
 
 // Allocate underlying device context
-int blk_comp_under_dev_alloc(struct underlying_dev **dev_ptr) {
+int blk_comp_under_dev_alloc(struct underlying_dev **dev_ptr)
+{
 	struct underlying_dev *under_dev = NULL;
-	struct bio_set *bset = NULL;
+	struct bio_set	      *bset	 = NULL;
 
 	under_dev = kzalloc(sizeof(*under_dev), GFP_KERNEL);
 	if (under_dev == NULL) {
@@ -43,7 +46,7 @@ int blk_comp_under_dev_alloc(struct underlying_dev **dev_ptr) {
 		goto alloc_err;
 	}
 
-	bset = kzalloc(sizeof(*bset), GFP_KERNEL);
+	bset		= kzalloc(sizeof(*bset), GFP_KERNEL);
 	under_dev->bset = bset;
 	if (bset == NULL) {
 		pr_err("Failed to allocate bio set");
@@ -61,20 +64,24 @@ alloc_err:
 }
 
 // Open underlying device
-int blk_comp_under_dev_open(struct underlying_dev *under_dev, const char *dev_path) {
-	int ret = 0;
-	struct block_device *bdev = NULL;
-	struct file *fbdev = NULL;
-	struct bio_set *bset = under_dev->bset;
+int blk_comp_under_dev_open(struct underlying_dev *under_dev,
+			    const char		  *dev_path)
+{
+	int		     ret   = 0;
+	struct block_device *bdev  = NULL;
+	struct file	    *fbdev = NULL;
+	struct bio_set	    *bset  = under_dev->bset;
 
-	fbdev = bdev_file_open_by_path(dev_path, BLK_OPEN_READ | BLK_OPEN_WRITE, under_dev, NULL);
+	fbdev = bdev_file_open_by_path(dev_path, BLK_OPEN_READ | BLK_OPEN_WRITE,
+				       under_dev, NULL);
 	if (IS_ERR_OR_NULL(fbdev)) {
-		pr_err("Failed to open file associated with device: %s", dev_path);
+		pr_err("Failed to open file associated with device: %s",
+		       dev_path);
 		return PTR_ERR(fbdev);
 	}
 
-	bdev = file_bdev(fbdev);
-	under_dev->bdev = bdev;
+	bdev		 = file_bdev(fbdev);
+	under_dev->bdev	 = bdev;
 	under_dev->fbdev = fbdev;
 
 	ret = bioset_init(bset, BIO_SET_POOL_SIZE, 0, BIOSET_NEED_BVECS);

@@ -12,7 +12,7 @@
 
 // Struct representing the block device module
 struct blk_comp {
-	int major;
+	int		     major;
 	struct blk_comp_dev *bcdev;
 };
 

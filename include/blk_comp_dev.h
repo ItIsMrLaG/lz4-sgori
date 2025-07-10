@@ -12,7 +12,7 @@
 
 // Struct representing a device to be managed by the driver
 struct blk_comp_dev {
-	struct gendisk *disk;
+	struct gendisk	      *disk;
 	struct underlying_dev *under_dev;
 };
 
@@ -20,7 +20,8 @@ struct blk_comp_dev {
 int blk_comp_dev_alloc(struct blk_comp_dev **dev_ptr);
 
 // Initialize device to be managed by the driver
-int blk_comp_dev_init(struct blk_comp_dev *bcdev, const char *arg, int major, int first_minor);
+int blk_comp_dev_init(struct blk_comp_dev *bcdev, const char *arg, int major,
+		      int first_minor);
 
 // Free block device context
 void blk_comp_dev_free(struct blk_comp_dev **dev_ptr);
