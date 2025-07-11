@@ -24,36 +24,30 @@ static const struct block_device_operations blk_comp_disk_ops = {
 };
 
 // Free generic disk context
-void blk_comp_gendisk_free(struct gendisk **disk_ptr)
+void blk_comp_gendisk_free(struct gendisk *disk)
 {
-	struct gendisk *disk = *disk_ptr;
-
 	if (disk == NULL)
 		return;
 
 	del_gendisk(disk);
 	put_disk(disk);
 
-	*disk_ptr = NULL;
-
 	pr_info("Released generic disk context");
 }
 
 // Allocate generic disk context
-int blk_comp_gendisk_alloc(struct gendisk **disk_ptr)
+struct gendisk *blk_comp_gendisk_alloc(void)
 {
 	struct gendisk *disk = NULL;
 
 	disk = blk_alloc_disk(NULL, NUMA_NO_NODE);
 	if (disk == NULL) {
 		pr_err("Failed to allocate generic disk context");
-		return -ENOMEM;
+		return NULL;
 	}
 
-	*disk_ptr = disk;
-
 	pr_info("Allocated generic disk context");
-	return 0;
+	return disk;
 }
 
 // Add generic disk

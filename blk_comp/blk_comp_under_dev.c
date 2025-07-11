@@ -15,15 +15,13 @@
 #include <linux/slab.h>
 #include <linux/stddef.h>
 
-#include "include/underlying_dev.h"
+#include "include/blk_comp_under_dev.h"
 
 #define BIO_SET_POOL_SIZE 1024
 
 // Free underlying device context
-void blk_comp_under_dev_free(struct underlying_dev **dev_ptr)
+void blk_comp_under_dev_free(struct blk_comp_under_dev *under_dev)
 {
-	struct underlying_dev *under_dev = *dev_ptr;
-
 	if (under_dev == NULL)
 		return;
 
@@ -39,43 +37,40 @@ void blk_comp_under_dev_free(struct underlying_dev **dev_ptr)
 	}
 
 	kfree(under_dev);
-	*dev_ptr = NULL;
 
 	pr_info("Released underlying device context");
 }
 
 // Allocate underlying device context
-int blk_comp_under_dev_alloc(struct underlying_dev **dev_ptr)
+struct blk_comp_under_dev *blk_comp_under_dev_alloc(void)
 {
-	struct underlying_dev *under_dev = NULL;
-	struct bio_set	      *bset	 = NULL;
+	struct blk_comp_under_dev *under_dev = NULL;
+	struct bio_set		  *bset	     = NULL;
 
 	under_dev = kzalloc(sizeof(*under_dev), GFP_KERNEL);
 	if (under_dev == NULL) {
 		pr_err("Failed to allocate underlying device context");
-		goto alloc_err;
+		return NULL;
 	}
 
 	bset		= kzalloc(sizeof(*bset), GFP_KERNEL);
 	under_dev->bset = bset;
 	if (bset == NULL) {
 		pr_err("Failed to allocate bio set");
-		goto alloc_err;
+		goto free_device;
 	}
 
-	*dev_ptr = under_dev;
-
 	pr_info("Allocated underlying device context");
-	return 0;
+	return under_dev;
 
-alloc_err:
-	blk_comp_under_dev_free(&under_dev);
-	return -ENOMEM;
+free_device:
+	blk_comp_under_dev_free(under_dev);
+	return NULL;
 }
 
 // Open underlying device
-int blk_comp_under_dev_open(struct underlying_dev *under_dev,
-			    const char		  *dev_path)
+int blk_comp_under_dev_open(struct blk_comp_under_dev *under_dev,
+			    const char		      *dev_path)
 {
 	int		     ret   = 0;
 	struct block_device *bdev  = NULL;

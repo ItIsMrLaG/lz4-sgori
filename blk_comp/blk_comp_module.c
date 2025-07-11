@@ -35,16 +35,16 @@ static int blk_comp_disk_create(const char *arg, const struct kernel_param *kp)
 		return -EBUSY;
 	}
 
-	ret = blk_comp_dev_alloc(&bcdev);
-	if (ret) {
+	bcdev = blk_comp_dev_alloc();
+	if (bcdev == NULL) {
 		pr_err("Failed to allocate block device context");
-		goto alloc_err;
+		return -ENOMEM;
 	}
 
 	ret = blk_comp_dev_init(bcdev, arg, bcomp.major, BLK_COMP_FIRST_MINOR);
 	if (ret) {
 		pr_err("Failed to initialize block device");
-		goto init_err;
+		goto free_device;
 	}
 
 	bcomp.bcdev = bcdev;
@@ -52,9 +52,8 @@ static int blk_comp_disk_create(const char *arg, const struct kernel_param *kp)
 	pr_info("Device mapped successfully");
 	return 0;
 
-init_err:
-	blk_comp_dev_free(&bcdev);
-alloc_err:
+free_device:
+	blk_comp_dev_free(bcdev);
 	return ret;
 }
 
@@ -68,8 +67,8 @@ static int blk_comp_disk_delete(const char *arg, const struct kernel_param *kp)
 		return -ENODEV;
 	}
 
-	blk_comp_dev_free(&bcdev);
-	bcomp.bcdev = bcdev;
+	blk_comp_dev_free(bcdev);
+	bcomp.bcdev = NULL;
 
 	pr_info("Device unmapped successfully");
 	return 0;
@@ -87,28 +86,33 @@ static const struct kernel_param_ops blk_comp_unmap_ops = {
 	.get = NULL,
 };
 
-// Initialize module
+// Module init callback
 static int __init blk_comp_init(void)
 {
-	bcomp.major = register_blkdev(BLK_COMP_MAJOR, BLK_COMP_NAME);
+	int major = register_blkdev(BLK_COMP_MAJOR, BLK_COMP_NAME);
 
-	if (bcomp.major < 0) {
+	if (major < 0) {
 		pr_err("Failed to load module");
 		return -EIO;
 	}
+
+	bcomp.major = major;
 
 	pr_info("Module loaded successfully");
 	return 0;
 }
 
-// Remove module
+// Module exit callback
 static void __exit blk_comp_exit(void)
 {
+	int		     major = bcomp.major;
 	struct blk_comp_dev *bcdev = bcomp.bcdev;
 
-	blk_comp_dev_free(&bcdev);
+	unregister_blkdev((unsigned int)major, BLK_COMP_NAME);
+	bcomp.major = 0;
 
-	unregister_blkdev((unsigned int)bcomp.major, BLK_COMP_NAME);
+	blk_comp_dev_free(bcdev);
+	bcomp.bcdev = NULL;
 
 	pr_info("Module unloaded successfully");
 }
