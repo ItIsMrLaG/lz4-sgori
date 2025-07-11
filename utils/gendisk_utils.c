@@ -9,13 +9,13 @@
 #include <linux/blkdev.h>
 #include <linux/init.h>
 #include <linux/nodemask_types.h>
-#include <linux/printk.h>
 #include <linux/sprintf.h>
 #include <linux/stddef.h>
 
 #include "include/gendisk_utils.h"
 
 #include "include/blk_comp_dev.h"
+#include "include/blk_comp_module.h"
 
 // Supported block device operations
 static const struct block_device_operations blk_comp_disk_ops = {
@@ -32,7 +32,7 @@ void blk_comp_gendisk_free(struct gendisk *disk)
 	del_gendisk(disk);
 	put_disk(disk);
 
-	pr_info("Released generic disk context");
+	BLK_COMP_PR_DEBUG("released generic disk context");
 }
 
 // Allocate generic disk context
@@ -42,11 +42,11 @@ struct gendisk *blk_comp_gendisk_alloc(void)
 
 	disk = blk_alloc_disk(NULL, NUMA_NO_NODE);
 	if (disk == NULL) {
-		pr_err("Failed to allocate generic disk context");
+		BLK_COMP_PR_ERR("failed to allocate generic disk context");
 		return NULL;
 	}
 
-	pr_info("Allocated generic disk context");
+	BLK_COMP_PR_DEBUG("allocated generic disk context");
 	return disk;
 }
 
@@ -70,16 +70,17 @@ int blk_comp_gendisk_add(struct gendisk *disk, struct blk_comp_dev *bcdev,
 	ret = snprintf(disk->disk_name, DISK_NAME_LEN, "blk-comp-%d",
 		       disk->first_minor);
 	if (ret < 0) {
-		pr_err("Failed to write generic disk name");
+		BLK_COMP_PR_ERR("failed to write generic disk name");
 		return ret;
 	}
 
 	ret = add_disk(disk);
 	if (ret) {
-		pr_err("Failed to add generic disk: %s", disk->disk_name);
+		BLK_COMP_PR_ERR("failed to add generic disk: %s",
+				disk->disk_name);
 		return ret;
 	}
 
-	pr_info("Initialized generic disk: %s", disk->disk_name);
+	BLK_COMP_PR_INFO("initialized generic disk: %s", disk->disk_name);
 	return 0;
 }

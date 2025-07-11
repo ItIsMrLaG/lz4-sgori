@@ -11,11 +11,12 @@
 #include <linux/err.h>
 #include <linux/fs.h>
 #include <linux/gfp_types.h>
-#include <linux/printk.h>
 #include <linux/slab.h>
 #include <linux/stddef.h>
 
 #include "include/blk_comp_under_dev.h"
+
+#include "include/blk_comp_module.h"
 
 #define BIO_SET_POOL_SIZE 1024
 
@@ -38,7 +39,7 @@ void blk_comp_under_dev_free(struct blk_comp_under_dev *under_dev)
 
 	kfree(under_dev);
 
-	pr_info("Released underlying device context");
+	BLK_COMP_PR_DEBUG("released underlying device context");
 }
 
 // Allocate underlying device context
@@ -49,18 +50,18 @@ struct blk_comp_under_dev *blk_comp_under_dev_alloc(void)
 
 	under_dev = kzalloc(sizeof(*under_dev), GFP_KERNEL);
 	if (under_dev == NULL) {
-		pr_err("Failed to allocate underlying device context");
+		BLK_COMP_PR_ERR("failed to allocate underlying device context");
 		return NULL;
 	}
 
 	bset		= kzalloc(sizeof(*bset), GFP_KERNEL);
 	under_dev->bset = bset;
 	if (bset == NULL) {
-		pr_err("Failed to allocate bio set");
+		BLK_COMP_PR_ERR("failed to allocate bio set");
 		goto free_device;
 	}
 
-	pr_info("Allocated underlying device context");
+	BLK_COMP_PR_DEBUG("allocated underlying device context");
 	return under_dev;
 
 free_device:
@@ -80,8 +81,7 @@ int blk_comp_under_dev_open(struct blk_comp_under_dev *under_dev,
 	fbdev = bdev_file_open_by_path(dev_path, BLK_OPEN_READ | BLK_OPEN_WRITE,
 				       under_dev, NULL);
 	if (IS_ERR_OR_NULL(fbdev)) {
-		pr_err("Failed to open file associated with device: %s",
-		       dev_path);
+		BLK_COMP_PR_ERR("failed to open device: %s", dev_path);
 		return (int)PTR_ERR(fbdev);
 	}
 
@@ -91,10 +91,10 @@ int blk_comp_under_dev_open(struct blk_comp_under_dev *under_dev,
 
 	ret = bioset_init(bset, BIO_SET_POOL_SIZE, 0, BIOSET_NEED_BVECS);
 	if (ret) {
-		pr_err("Failed to initialize bio set");
+		BLK_COMP_PR_ERR("failed to initialize bio set");
 		return ret;
 	}
 
-	pr_info("Opened underlying device: %s", dev_path);
+	BLK_COMP_PR_INFO("opened underlying device: %s", dev_path);
 	return 0;
 }

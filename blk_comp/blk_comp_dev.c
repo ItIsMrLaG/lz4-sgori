@@ -10,12 +10,12 @@
 #include <linux/blk_types.h>
 #include <linux/blkdev.h>
 #include <linux/gfp_types.h>
-#include <linux/printk.h>
 #include <linux/slab.h>
 #include <linux/stddef.h>
 
 #include "include/blk_comp_dev.h"
 
+#include "include/blk_comp_module.h"
 #include "include/blk_comp_req.h"
 #include "include/blk_comp_under_dev.h"
 #include "include/gendisk_utils.h"
@@ -34,7 +34,7 @@ void blk_comp_dev_free(struct blk_comp_dev *bcdev)
 
 	kfree(bcdev);
 
-	pr_info("Released block device context");
+	BLK_COMP_PR_DEBUG("released block device context");
 }
 
 // Allocate block device context
@@ -46,25 +46,25 @@ struct blk_comp_dev *blk_comp_dev_alloc(void)
 
 	bcdev = kzalloc(sizeof(*bcdev), GFP_KERNEL);
 	if (bcdev == NULL) {
-		pr_err("Failed to allocate block device context");
+		BLK_COMP_PR_ERR("failed to allocate block device context");
 		return NULL;
 	}
 
 	under_dev	 = blk_comp_under_dev_alloc();
 	bcdev->under_dev = under_dev;
 	if (under_dev == NULL) {
-		pr_err("Failed to allocate underlying device context");
+		BLK_COMP_PR_ERR("failed to allocate underlying device context");
 		goto free_device;
 	}
 
 	disk	    = blk_comp_gendisk_alloc();
 	bcdev->disk = disk;
 	if (disk == NULL) {
-		pr_err("Failed to allocate generic disk context");
+		BLK_COMP_PR_ERR("failed to allocate generic disk context");
 		goto free_device;
 	}
 
-	pr_info("Allocated block device context");
+	BLK_COMP_PR_DEBUG("allocated block device context");
 	return bcdev;
 
 free_device:
@@ -82,17 +82,17 @@ int blk_comp_dev_init(struct blk_comp_dev *bcdev, const char *dev_path,
 
 	ret = blk_comp_under_dev_open(under_dev, dev_path);
 	if (ret) {
-		pr_err("Failed to open underlying device");
+		BLK_COMP_PR_ERR("failed to open underlying device");
 		return ret;
 	}
 
 	ret = blk_comp_gendisk_add(disk, bcdev, major, first_minor);
 	if (ret) {
-		pr_err("Failed to add generic disk");
+		BLK_COMP_PR_ERR("failed to add generic disk");
 		return ret;
 	}
 
-	pr_info("Initialized block device");
+	BLK_COMP_PR_DEBUG("initialized block device");
 	return 0;
 }
 
@@ -105,24 +105,24 @@ void blk_comp_dev_submit_bio(struct bio *original_bio)
 
 	struct blk_comp_req *bcreq = blk_comp_req_alloc();
 	if (bcreq == NULL) {
-		pr_err("Failed to allocate request context");
+		BLK_COMP_PR_ERR("failed to allocate request context");
 		status = BLK_STS_RESOURCE;
 		goto submit_with_err;
 	}
 
 	status = blk_comp_req_init(bcreq, original_bio, bcdev);
 	if (status != BLK_STS_OK) {
-		pr_err("Failed to initialize request");
+		BLK_COMP_PR_ERR("failed to initialize request");
 		goto free_request;
 	}
 
 	status = blk_comp_req_submit(bcreq);
 	if (status != BLK_STS_OK) {
-		pr_err("Failed to submit request");
+		BLK_COMP_PR_ERR("failed to submit request");
 		goto free_request;
 	}
 
-	pr_info("Submitted request");
+	BLK_COMP_PR_INFO("submitted bio request");
 	return;
 
 free_request:

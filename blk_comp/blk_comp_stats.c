@@ -7,18 +7,19 @@
 
 #include <linux/blk_types.h>
 #include <linux/gfp_types.h>
-#include <linux/printk.h>
 #include <linux/slab.h>
 #include <linux/stddef.h>
 
 #include "include/blk_comp_stats.h"
+
+#include "include/blk_comp_module.h"
 
 // Free request statistics
 void blk_comp_stats_free(struct blk_comp_stats *bcstats)
 {
 	kfree(bcstats);
 
-	pr_info("Released request stats");
+	BLK_COMP_PR_DEBUG("released request stats");
 }
 
 // Allocate request statistics
@@ -28,11 +29,11 @@ struct blk_comp_stats *blk_comp_stats_alloc(void)
 
 	bcstats = kzalloc(sizeof(*bcstats), GFP_KERNEL);
 	if (bcstats == NULL) {
-		pr_err("Failed to allocate request stats");
+		BLK_COMP_PR_ERR("failed to allocate request stats");
 		return NULL;
 	}
 
-	pr_info("Allocated request stats");
+	BLK_COMP_PR_DEBUG("allocated request stats");
 	return bcstats;
 }
 

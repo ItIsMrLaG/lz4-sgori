@@ -9,13 +9,13 @@
 #include <linux/blk_types.h>
 #include <linux/blkdev.h>
 #include <linux/gfp_types.h>
-#include <linux/printk.h>
 #include <linux/slab.h>
 #include <linux/stddef.h>
 
 #include "include/blk_comp_req.h"
 
 #include "include/blk_comp_dev.h"
+#include "include/blk_comp_module.h"
 #include "include/blk_comp_stats.h"
 #include "include/blk_comp_under_dev.h"
 
@@ -24,7 +24,7 @@ void blk_comp_req_free(struct blk_comp_req *bcreq)
 {
 	kfree(bcreq);
 
-	pr_info("Released request context");
+	BLK_COMP_PR_DEBUG("released request context");
 }
 
 // Allocate request context
@@ -34,11 +34,11 @@ struct blk_comp_req *blk_comp_req_alloc(void)
 
 	bcreq = kzalloc(sizeof(*bcreq), GFP_NOIO);
 	if (bcreq == NULL) {
-		pr_err("Failed to allocate request context");
+		BLK_COMP_PR_ERR("failed to allocate request context");
 		return NULL;
 	}
 
-	pr_info("Allocated request context");
+	BLK_COMP_PR_DEBUG("allocated request context");
 	return bcreq;
 }
 
@@ -60,7 +60,7 @@ blk_status_t blk_comp_req_init(struct blk_comp_req *bcreq,
 		stats_to_update = bcdev->write_stats;
 		break;
 	default:
-		pr_err("Unsupported request operation");
+		BLK_COMP_PR_ERR("unsupported request operation");
 		return BLK_STS_NOTSUPP;
 	}
 
@@ -68,7 +68,7 @@ blk_status_t blk_comp_req_init(struct blk_comp_req *bcreq,
 	bcreq->under_dev       = under_dev;
 	bcreq->stats_to_update = stats_to_update;
 
-	pr_info("Initialized request");
+	BLK_COMP_PR_DEBUG("initialized request");
 	return BLK_STS_OK;
 }
 
@@ -87,7 +87,7 @@ static void blk_comp_end_io(struct bio *new_bio)
 	bio_put(new_bio);
 	blk_comp_req_free(bcreq);
 
-	pr_info("Completed bio request");
+	BLK_COMP_PR_INFO("completed bio request");
 }
 
 // Submit request to underlying device
@@ -101,7 +101,7 @@ blk_status_t blk_comp_req_submit(struct blk_comp_req *bcreq)
 	struct bio *new_bio =
 		bio_alloc_clone(bdev, original_bio, GFP_NOIO, bset);
 	if (new_bio == NULL) {
-		pr_err("Failed to clone original bio");
+		BLK_COMP_PR_ERR("failed to clone original bio");
 		return BLK_STS_RESOURCE;
 	}
 
@@ -110,6 +110,6 @@ blk_status_t blk_comp_req_submit(struct blk_comp_req *bcreq)
 
 	submit_bio_noacct(new_bio);
 
-	pr_info("Submitted request to underlying device");
+	BLK_COMP_PR_DEBUG("submitted request to underlying device");
 	return BLK_STS_OK;
 }
