@@ -26,6 +26,6 @@ struct blk_comp_stats *blk_comp_stats_alloc(void);
 void blk_comp_stats_update(struct blk_comp_stats *bcstats, struct bio *bio);
 
 // Free request statistics
-void blk_comp_stats_free(struct blk_comp_stats *stats);
+void blk_comp_stats_free(struct blk_comp_stats *bcstats);
 
 #endif

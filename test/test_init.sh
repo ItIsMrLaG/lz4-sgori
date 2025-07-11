@@ -1,11 +1,26 @@
 set -e
 
-make
-insmod build/blk_comp.ko
+source test/literals.sh
 
-modprobe brd rd_nr=1 rd_size=307200 max_part=0
+setup() {
+	make
+	insmod $MODULE_OBJ
+	modprobe brd rd_nr=1 rd_size=$DISK_SIZE_IN_KB max_part=0
+}
 
-echo -n /dev/ram0 > /sys/module/blk_comp/parameters/mapper
-echo -n unmap > /sys/module/blk_comp/parameters/unmapper
+create_and_remove_disk() {
+	echo -n $UNDERLYING_DEVICE > $DEVICE_MAPPER
+	echo -n unmap > $DEVICE_UNMAPPER
+}
 
-rmmod blk_comp
+cleanup() {
+	exit_code=$?
+	rmmod $MODULE_NAME
+	rmmod brd
+	exit $exit_code
+}
+
+trap cleanup EXIT
+
+setup
+create_and_remove_disk

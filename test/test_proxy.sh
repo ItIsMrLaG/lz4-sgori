@@ -1,28 +1,31 @@
 set -e
 
-MAPPER=/sys/module/blk_comp/parameters/mapper
-UNMAPPER=/sys/module/blk_comp/parameters/unmapper
+source test/literals.sh
 
-TEST_DISK=/dev/blk-comp-0
-TEST_FILE=test/test_files/01.txt
-TEST_FILE_LEN=$(stat --print="%s" $TEST_FILE)
-TEMP_DIR=test/tmp
-OUTPUT_FILE=test/tmp/01.txt
+setup() {
+	make
+	insmod $MODULE_OBJ
+	modprobe brd rd_nr=1 rd_size=$DISK_SIZE_IN_KB max_part=0
+	echo -n $UNDERLYING_DEVICE > $DEVICE_MAPPER
+	mkdir $TEMP_DIR
+	touch $PROXY_OUTPUT_FILE
+}
 
-make
-insmod build/blk_comp.ko
+make_requests_and_compare() {
+	dd if=$PROXY_TEST_FILE of=$TEST_DEVICE bs=4k count=2 oflag=direct
+	dd if=$TEST_DEVICE of=$PROXY_OUTPUT_FILE bs=4k count=2 iflag=direct
+	cmp --verbose --bytes=$PROXY_TEST_FILE_LEN $PROXY_TEST_FILE $PROXY_OUTPUT_FILE
+}
 
-modprobe brd rd_nr=1 rd_size=307200 max_part=0
-echo -n /dev/ram0 > $MAPPER
+cleanup() {
+	exit_code=$?
+	rm -rf $TEMP_DIR
+	rmmod $MODULE_NAME
+	rmmod brd
+	exit $exit_code
+}
 
-mkdir $TEMP_DIR
-touch $OUTPUT_FILE
+trap cleanup EXIT
 
-dd if=$TEST_FILE of=$TEST_DISK bs=4k count=2 oflag=direct
-dd if=$TEST_DISK of=$OUTPUT_FILE bs=4k count=2 iflag=direct
-
-cmp --verbose --bytes=$TEST_FILE_LEN $TEST_FILE $OUTPUT_FILE
-
-rm -rf $TEMP_DIR
-
-rmmod blk_comp
+setup
+make_requests_and_compare
