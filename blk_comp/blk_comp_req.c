@@ -19,25 +19,6 @@
 #include "include/blk_comp_stats.h"
 #include "include/blk_comp_under_dev.h"
 
-// Callback for ending new requests
-static void blk_comp_end_io(struct bio *new_bio)
-{
-	struct blk_comp_req *bcreq = (struct blk_comp_req *)new_bio->bi_private;
-	struct bio	    *original_bio      = bcreq->original_bio;
-	struct blk_comp_stats *stats_to_update = bcreq->stats_to_update;
-	blk_status_t	       status	       = new_bio->bi_status;
-
-	kfree(bcreq);
-
-	blk_comp_stats_update(stats_to_update, new_bio);
-	bio_put(new_bio);
-
-	original_bio->bi_status = status;
-	bio_endio(original_bio);
-
-	pr_info("Completed bio request");
-}
-
 // Free request context
 void blk_comp_req_free(struct blk_comp_req *bcreq)
 {
@@ -91,6 +72,24 @@ blk_status_t blk_comp_req_init(struct blk_comp_req *bcreq,
 	return BLK_STS_OK;
 }
 
+// Callback for ending new requests
+static void blk_comp_end_io(struct bio *new_bio)
+{
+	struct blk_comp_req   *bcreq	       = new_bio->bi_private;
+	struct bio	      *original_bio    = bcreq->original_bio;
+	struct blk_comp_stats *stats_to_update = bcreq->stats_to_update;
+
+	blk_comp_stats_update(stats_to_update, new_bio);
+
+	original_bio->bi_status = new_bio->bi_status;
+	bio_endio(original_bio);
+
+	bio_put(new_bio);
+	blk_comp_req_free(bcreq);
+
+	pr_info("Completed bio request");
+}
+
 // Submit request to underlying device
 blk_status_t blk_comp_req_submit(struct blk_comp_req *bcreq)
 {
@@ -106,9 +105,8 @@ blk_status_t blk_comp_req_submit(struct blk_comp_req *bcreq)
 		return BLK_STS_RESOURCE;
 	}
 
-	new_bio->bi_iter    = original_bio->bi_iter;
-	new_bio->bi_private = bcreq;
 	new_bio->bi_end_io  = blk_comp_end_io;
+	new_bio->bi_private = bcreq;
 
 	submit_bio_noacct(new_bio);
 

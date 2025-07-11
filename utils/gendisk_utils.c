@@ -62,7 +62,7 @@ int blk_comp_gendisk_add(struct gendisk *disk, struct blk_comp_dev *bcdev,
 	disk->fops	   = &blk_comp_disk_ops;
 	disk->private_data = bcdev;
 
-	// Disable partition support
+	// Do not support multiple minors, disable partition support
 	disk->flags |= GENHD_FL_NO_PART;
 
 	set_capacity(disk, get_capacity(bcdev->under_dev->bdev->bd_disk));
