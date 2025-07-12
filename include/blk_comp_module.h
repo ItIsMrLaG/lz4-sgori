@@ -24,15 +24,19 @@ struct blk_comp {
 	struct blk_comp_dev *bcdev;
 };
 
+// Print formatted error to logs
 #define BLK_COMP_PR_ERR(fmt, ...) \
 	pr_err("%s: " fmt "\n", BLK_COMP_MODULE_NAME, ##__VA_ARGS__)
 
+// Print formatted info to logs
 #define BLK_COMP_PR_INFO(fmt, ...) \
 	pr_info("%s: " fmt "\n", BLK_COMP_MODULE_NAME, ##__VA_ARGS__)
 
+// Print formatted debug info to logs
 #define BLK_COMP_PR_DEBUG(fmt, ...) \
 	pr_debug("%s: " fmt "\n", BLK_COMP_MODULE_NAME, ##__VA_ARGS__)
 
+// Format string for request statistics
 #define BLK_COMP_STATS_FORMAT \
 	"\
 read:\n\

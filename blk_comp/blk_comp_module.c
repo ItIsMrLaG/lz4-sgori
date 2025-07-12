@@ -19,6 +19,9 @@
 #include "include/blk_comp_dev.h"
 #include "include/blk_comp_stats.h"
 
+// Callbacks can have unused parameters
+#pragma clang diagnostic ignored "-Wunused-parameter"
+
 static struct blk_comp bcomp = {};
 
 // Create disk over device at specified path
