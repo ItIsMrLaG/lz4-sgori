@@ -5,7 +5,6 @@
  * This file is released under the GPL.
  */
 
-#include <asm-generic/errno-base.h>
 #include <linux/blkdev.h>
 #include <linux/init.h>
 #include <linux/nodemask_types.h>

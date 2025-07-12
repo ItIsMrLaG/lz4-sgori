@@ -5,7 +5,6 @@
  * This file is released under the GPL.
  */
 
-#include <asm-generic/errno-base.h>
 #include <linux/bio.h>
 #include <linux/blk_types.h>
 #include <linux/blkdev.h>
@@ -17,6 +16,7 @@
 
 #include "include/blk_comp_module.h"
 #include "include/blk_comp_req.h"
+#include "include/blk_comp_stats.h"
 #include "include/blk_comp_under_dev.h"
 #include "include/gendisk_utils.h"
 
@@ -26,11 +26,15 @@ void blk_comp_dev_free(struct blk_comp_dev *bcdev)
 	if (bcdev == NULL)
 		return;
 
-	struct blk_comp_under_dev *under_dev = bcdev->under_dev;
-	struct gendisk		  *disk	     = bcdev->disk;
+	struct gendisk		  *disk	       = bcdev->disk;
+	struct blk_comp_under_dev *under_dev   = bcdev->under_dev;
+	struct blk_comp_stats	  *read_stats  = bcdev->read_stats;
+	struct blk_comp_stats	  *write_stats = bcdev->write_stats;
 
 	blk_comp_gendisk_free(disk);
 	blk_comp_under_dev_free(under_dev);
+	blk_comp_stats_free(read_stats);
+	blk_comp_stats_free(write_stats);
 
 	kfree(bcdev);
 
@@ -40,9 +44,11 @@ void blk_comp_dev_free(struct blk_comp_dev *bcdev)
 // Allocate block device context
 struct blk_comp_dev *blk_comp_dev_alloc(void)
 {
-	struct blk_comp_dev	  *bcdev     = NULL;
-	struct blk_comp_under_dev *under_dev = NULL;
-	struct gendisk		  *disk	     = NULL;
+	struct blk_comp_dev	  *bcdev       = NULL;
+	struct gendisk		  *disk	       = NULL;
+	struct blk_comp_under_dev *under_dev   = NULL;
+	struct blk_comp_stats	  *read_stats  = NULL;
+	struct blk_comp_stats	  *write_stats = NULL;
 
 	bcdev = kzalloc(sizeof(*bcdev), GFP_KERNEL);
 	if (bcdev == NULL) {
@@ -64,6 +70,20 @@ struct blk_comp_dev *blk_comp_dev_alloc(void)
 		goto free_device;
 	}
 
+	read_stats	  = blk_comp_stats_alloc();
+	bcdev->read_stats = read_stats;
+	if (read_stats == NULL) {
+		BLK_COMP_PR_ERR("failed to allocate read stats");
+		goto free_device;
+	}
+
+	write_stats	   = blk_comp_stats_alloc();
+	bcdev->write_stats = write_stats;
+	if (write_stats == NULL) {
+		BLK_COMP_PR_ERR("failed to allocate write stats");
+		goto free_device;
+	}
+
 	BLK_COMP_PR_DEBUG("allocated block device context");
 	return bcdev;
 
@@ -77,8 +97,8 @@ int blk_comp_dev_init(struct blk_comp_dev *bcdev, const char *dev_path,
 		      int major, int first_minor)
 {
 	int			   ret	     = 0;
-	struct blk_comp_under_dev *under_dev = bcdev->under_dev;
 	struct gendisk		  *disk	     = bcdev->disk;
+	struct blk_comp_under_dev *under_dev = bcdev->under_dev;
 
 	ret = blk_comp_under_dev_open(under_dev, dev_path);
 	if (ret) {

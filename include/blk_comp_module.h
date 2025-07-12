@@ -18,6 +18,12 @@
 #define BLK_COMP_MAJOR	     0
 #define BLK_COMP_FIRST_MINOR 0
 
+// Struct representing the block device module
+struct blk_comp {
+	int		     major;
+	struct blk_comp_dev *bcdev;
+};
+
 #define BLK_COMP_PR_ERR(fmt, ...) \
 	pr_err("%s: " fmt "\n", BLK_COMP_MODULE_NAME, ##__VA_ARGS__)
 
@@ -27,10 +33,23 @@
 #define BLK_COMP_PR_DEBUG(fmt, ...) \
 	pr_debug("%s: " fmt "\n", BLK_COMP_MODULE_NAME, ##__VA_ARGS__)
 
-// Struct representing the block device module
-struct blk_comp {
-	int		     major;
-	struct blk_comp_dev *bcdev;
-};
+#define BLK_COMP_STATS_FORMAT \
+	"\
+read:\n\
+	reqs_total: %lld\n\
+	reqs_failed: %lld\n\
+	vec_count: %lld\n\
+	data_in_bytes: %lld\n\
+write:\n\
+	reqs_total: %lld\n\
+	reqs_failed: %lld\n\
+	vec_count: %lld\n\
+	data_in_bytes: %lld\n\
+all:\n\
+	reqs_total: %lld\n\
+	reqs_failed: %lld\n\
+	vec_count: %lld\n\
+	data_in_bytes: %lld\n\
+"
 
 #endif

@@ -11,9 +11,12 @@ setup() {
 	touch $PROXY_OUTPUT_FILE
 }
 
-make_requests_and_compare() {
+make_requests() {
 	dd if=$PROXY_TEST_FILE of=$TEST_DEVICE bs=4k count=2 oflag=direct
 	dd if=$TEST_DEVICE of=$PROXY_OUTPUT_FILE bs=4k count=2 iflag=direct
+}
+
+compare_files() {
 	cmp --verbose --bytes=$PROXY_TEST_FILE_LEN $PROXY_TEST_FILE $PROXY_OUTPUT_FILE
 }
 
@@ -28,4 +31,5 @@ cleanup() {
 trap cleanup EXIT
 
 setup
-make_requests_and_compare
+make_requests
+compare_files
