@@ -14,7 +14,7 @@
 #include "include/gendisk_utils.h"
 
 #include "include/blk_comp_dev.h"
-#include "include/blk_comp_module.h"
+#include "include/blk_comp_static.h"
 
 // Supported block device operations
 static const struct block_device_operations blk_comp_disk_ops = {

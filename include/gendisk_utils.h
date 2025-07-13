@@ -5,8 +5,8 @@
  * This file is released under the GPL.
  */
 
-#ifndef GENDISK_UTILS
-#define GENDISK_UTILS
+#ifndef GENDISK_UTILS_H
+#define GENDISK_UTILS_H
 
 #include <linux/blkdev.h>
 

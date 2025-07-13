@@ -5,11 +5,13 @@
  * This file is released under the GPL.
  */
 
-#ifndef BLK_COMP_STATISTICS
-#define BLK_COMP_STATISTICS
+#ifndef BLK_COMP_STATS_H
+#define BLK_COMP_STATS_H
 
 #include <linux/blk_types.h>
 #include <linux/types.h>
+
+#include "blk_comp_static.h"
 
 // Struct representing request statistics of a disk for one of the operations
 struct blk_comp_stats {
@@ -17,7 +19,7 @@ struct blk_comp_stats {
 	atomic64_t reqs_failed;
 	atomic64_t vec_count;
 	atomic64_t data_in_bytes;
-};
+} BLK_COMP_ALIGN_32;
 
 // Allocate request statistics
 struct blk_comp_stats *blk_comp_stats_alloc(void);

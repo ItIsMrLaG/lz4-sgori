@@ -6,6 +6,7 @@
  */
 
 #include <linux/bio.h>
+#include <linux/blk_types.h>
 #include <linux/blkdev.h>
 #include <linux/err.h>
 #include <linux/fs.h>
@@ -15,9 +16,7 @@
 
 #include "include/blk_comp_under_dev.h"
 
-#include "include/blk_comp_module.h"
-
-#define BIO_SET_POOL_SIZE 1024
+#include "include/blk_comp_static.h"
 
 // Free underlying device context
 void blk_comp_under_dev_free(struct blk_comp_under_dev *under_dev)
@@ -88,7 +87,7 @@ int blk_comp_under_dev_open(struct blk_comp_under_dev *under_dev,
 	under_dev->bdev	 = bdev;
 	under_dev->fbdev = fbdev;
 
-	ret = bioset_init(bset, BIO_SET_POOL_SIZE, 0, BIOSET_NEED_BVECS);
+	ret = bioset_init(bset, BLK_COMP_BIOSET_SIZE, 0, BIOSET_NEED_BVECS);
 	if (ret) {
 		BLK_COMP_PR_ERR("failed to initialize bio set");
 		return ret;

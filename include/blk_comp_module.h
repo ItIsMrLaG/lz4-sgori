@@ -5,55 +5,16 @@
  * This file is released under the GPL.
  */
 
-#ifndef BLK_COMP_MODULE
-#define BLK_COMP_MODULE
-
-#include <linux/printk.h>
+#ifndef BLK_COMP_MODULE_H
+#define BLK_COMP_MODULE_H
 
 #include "blk_comp_dev.h"
-
-#define BLK_COMP_MODULE_NAME "blk_comp"
-#define BLK_COMP_DEVICE_NAME "blk-comp-dev"
-
-#define BLK_COMP_MAJOR	     0
-#define BLK_COMP_FIRST_MINOR 0
+#include "blk_comp_static.h"
 
 // Struct representing the block device module
 struct blk_comp {
 	int		     major;
 	struct blk_comp_dev *bcdev;
-};
-
-// Print formatted error to logs
-#define BLK_COMP_PR_ERR(fmt, ...) \
-	pr_err("%s: " fmt "\n", BLK_COMP_MODULE_NAME, ##__VA_ARGS__)
-
-// Print formatted info to logs
-#define BLK_COMP_PR_INFO(fmt, ...) \
-	pr_info("%s: " fmt "\n", BLK_COMP_MODULE_NAME, ##__VA_ARGS__)
-
-// Print formatted debug info to logs
-#define BLK_COMP_PR_DEBUG(fmt, ...) \
-	pr_debug("%s: " fmt "\n", BLK_COMP_MODULE_NAME, ##__VA_ARGS__)
-
-// Format string for request statistics
-#define BLK_COMP_STATS_FORMAT \
-	"\
-read:\n\
-	reqs_total: %lld\n\
-	reqs_failed: %lld\n\
-	vec_count: %lld\n\
-	data_in_bytes: %lld\n\
-write:\n\
-	reqs_total: %lld\n\
-	reqs_failed: %lld\n\
-	vec_count: %lld\n\
-	data_in_bytes: %lld\n\
-all:\n\
-	reqs_total: %lld\n\
-	reqs_failed: %lld\n\
-	vec_count: %lld\n\
-	data_in_bytes: %lld\n\
-"
+} BLK_COMP_ALIGN_16;
 
 #endif

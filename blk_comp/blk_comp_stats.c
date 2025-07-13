@@ -8,14 +8,14 @@
 #include <linux/bio.h>
 #include <linux/blk_types.h>
 #include <linux/bvec.h>
+#include <linux/fortify-string.h>
 #include <linux/gfp_types.h>
 #include <linux/slab.h>
 #include <linux/stddef.h>
-#include <linux/string.h>
 
 #include "include/blk_comp_stats.h"
 
-#include "include/blk_comp_module.h"
+#include "include/blk_comp_static.h"
 
 // Free request statistics
 void blk_comp_stats_free(struct blk_comp_stats *bcstats)

@@ -17,15 +17,17 @@
 #include "include/blk_comp_module.h"
 
 #include "include/blk_comp_dev.h"
+#include "include/blk_comp_static.h"
 #include "include/blk_comp_stats.h"
-
-// Callbacks can have unused parameters
-#pragma clang diagnostic ignored "-Wunused-parameter"
 
 static struct blk_comp bcomp = {};
 
+// Callbacks can have unused parameters
+// NOLINTBEGIN(misc-unused-parameters)
+
 // Create disk over device at specified path
-static int blk_comp_create_disk(const char *arg, const struct kernel_param *kp)
+static int blk_comp_create_disk(const char		  *arg,
+				const struct kernel_param *kpar)
 {
 	int		     ret   = 0;
 	struct blk_comp_dev *bcdev = bcomp.bcdev;
@@ -58,7 +60,8 @@ free_device:
 }
 
 // Remove existing disk
-static int blk_comp_delete_disk(const char *arg, const struct kernel_param *kp)
+static int blk_comp_delete_disk(const char		  *arg,
+				const struct kernel_param *kpar)
 {
 	struct blk_comp_dev *bcdev = bcomp.bcdev;
 
@@ -75,7 +78,7 @@ static int blk_comp_delete_disk(const char *arg, const struct kernel_param *kp)
 }
 
 // Get info about existing disk
-static int blk_comp_get_disk_info(char *buf, const struct kernel_param *kp)
+static int blk_comp_get_disk_info(char *buf, const struct kernel_param *kpar)
 {
 	int		     ret   = 0;
 	struct blk_comp_dev *bcdev = bcomp.bcdev;
@@ -97,7 +100,8 @@ static int blk_comp_get_disk_info(char *buf, const struct kernel_param *kp)
 }
 
 // Reset request statistics of existing disk
-static int blk_comp_reset_stats(const char *arg, const struct kernel_param *kp)
+static int blk_comp_reset_stats(const char		  *arg,
+				const struct kernel_param *kpar)
 {
 	struct blk_comp_dev *bcdev = bcomp.bcdev;
 
@@ -117,7 +121,7 @@ static int blk_comp_reset_stats(const char *arg, const struct kernel_param *kp)
 }
 
 // Get request statistics of existing disk
-static int blk_comp_get_stats(char *buf, const struct kernel_param *kp)
+static int blk_comp_get_stats(char *buf, const struct kernel_param *kpar)
 {
 	int		     ret   = 0;
 	struct blk_comp_dev *bcdev = bcomp.bcdev;
@@ -152,6 +156,9 @@ static int blk_comp_get_stats(char *buf, const struct kernel_param *kp)
 
 	return ret;
 }
+
+// Callbacks can have unused parameters
+// NOLINTEND(misc-unused-parameters)
 
 // Module init callback
 static int __init blk_comp_init(void)

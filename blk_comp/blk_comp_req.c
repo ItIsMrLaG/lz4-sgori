@@ -15,7 +15,7 @@
 #include "include/blk_comp_req.h"
 
 #include "include/blk_comp_dev.h"
-#include "include/blk_comp_module.h"
+#include "include/blk_comp_static.h"
 #include "include/blk_comp_stats.h"
 #include "include/blk_comp_under_dev.h"
 
