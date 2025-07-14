@@ -5,13 +5,13 @@
  * This file is released under the GPL.
  */
 
-#ifndef BLK_COMP_STATS_H
-#define BLK_COMP_STATS_H
+#ifndef LZ4E_STATS_H
+#define LZ4E_STATS_H
 
 #include <linux/blk_types.h>
 #include <linux/types.h>
 
-#include "blk_comp_static.h"
+#include "lz4e_static.h"
 
 // Struct representing request statistics of a disk for one of the operations
 struct LZ4E_stats {
@@ -25,12 +25,12 @@ struct LZ4E_stats {
 struct LZ4E_stats *LZ4E_stats_alloc(void);
 
 // Update statistics using given bio
-void LZ4E_stats_update(struct LZ4E_stats *bcstats, struct bio *bio);
+void LZ4E_stats_update(struct LZ4E_stats *lzstats, struct bio *bio);
 
 // Reset request statistics
-void LZ4E_stats_reset(struct LZ4E_stats *bcstats);
+void LZ4E_stats_reset(struct LZ4E_stats *lzstats);
 
 // Free request statistics
-void LZ4E_stats_free(struct LZ4E_stats *bcstats);
+void LZ4E_stats_free(struct LZ4E_stats *lzstats);
 
 #endif

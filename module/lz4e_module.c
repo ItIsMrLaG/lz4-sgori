@@ -15,60 +15,60 @@
 #include <linux/stddef.h>
 #include <linux/sysfs.h>
 
-#include "include/blk_comp_module.h"
+#include "include/lz4e_module.h"
 
-#include "include/blk_comp_dev.h"
-#include "include/blk_comp_static.h"
-#include "include/blk_comp_stats.h"
+#include "include/lz4e_dev.h"
+#include "include/lz4e_static.h"
+#include "include/lz4e_stats.h"
 
-static struct LZ4E_module bcomp = {};
+static struct LZ4E_module lzmod = {};
 
 // Callbacks can have unused parameters
 // NOLINTBEGIN(misc-unused-parameters)
 
 static int LZ4E_create_disk(const char *arg, const struct kernel_param *kpar)
 {
-	struct LZ4E_dev *bcdev = bcomp.bcdev;
+	struct LZ4E_dev *lzdev = lzmod.lzdev;
 	int ret;
 
-	if (bcdev) {
+	if (lzdev) {
 		LZ4E_PR_ERR("device already exists");
 		return -EBUSY;
 	}
 
-	bcdev = LZ4E_dev_alloc();
-	if (!bcdev) {
+	lzdev = LZ4E_dev_alloc();
+	if (!lzdev) {
 		LZ4E_PR_ERR("failed to allocate block device context");
 		return -ENOMEM;
 	}
 
-	ret = LZ4E_dev_init(bcdev, arg, bcomp.major, LZ4E_FIRST_MINOR);
+	ret = LZ4E_dev_init(lzdev, arg, lzmod.major, LZ4E_FIRST_MINOR);
 	if (ret) {
 		LZ4E_PR_ERR("failed to initialize block device");
 		goto free_device;
 	}
 
-	bcomp.bcdev = bcdev;
+	lzmod.lzdev = lzdev;
 
 	LZ4E_PR_INFO("device mapped successfully");
 	return 0;
 
 free_device:
-	LZ4E_dev_free(bcdev);
+	LZ4E_dev_free(lzdev);
 	return ret;
 }
 
 static int LZ4E_delete_disk(const char *arg, const struct kernel_param *kpar)
 {
-	struct LZ4E_dev *bcdev = bcomp.bcdev;
+	struct LZ4E_dev *lzdev = lzmod.lzdev;
 
-	if (!bcdev) {
+	if (!lzdev) {
 		LZ4E_PR_ERR("no device for unmapping");
 		return -ENODEV;
 	}
 
-	LZ4E_dev_free(bcdev);
-	bcomp.bcdev = NULL;
+	LZ4E_dev_free(lzdev);
+	lzmod.lzdev = NULL;
 
 	LZ4E_PR_INFO("device unmapped successfully");
 	return 0;
@@ -76,16 +76,16 @@ static int LZ4E_delete_disk(const char *arg, const struct kernel_param *kpar)
 
 static int LZ4E_get_disk_info(char *buf, const struct kernel_param *kpar)
 {
-	struct LZ4E_dev *bcdev = bcomp.bcdev;
+	struct LZ4E_dev *lzdev = lzmod.lzdev;
 	int ret;
 
-	if (!bcdev) {
+	if (!lzdev) {
 		LZ4E_PR_ERR("no device found");
 		return -ENODEV;
 	}
 
-	char *disk_name = bcdev->disk->disk_name;
-	char *under_disk_name = bcdev->under_dev->bdev->bd_disk->disk_name;
+	char *disk_name = lzdev->disk->disk_name;
+	char *under_disk_name = lzdev->under_dev->bdev->bd_disk->disk_name;
 
 	ret = sysfs_emit(buf, "%s: proxy over %s\n", disk_name,
 			 under_disk_name);
@@ -97,15 +97,15 @@ static int LZ4E_get_disk_info(char *buf, const struct kernel_param *kpar)
 
 static int LZ4E_reset_stats(const char *arg, const struct kernel_param *kpar)
 {
-	struct LZ4E_dev *bcdev = bcomp.bcdev;
+	struct LZ4E_dev *lzdev = lzmod.lzdev;
 
-	if (!bcdev) {
+	if (!lzdev) {
 		LZ4E_PR_ERR("no stats to reset");
 		return -ENODEV;
 	}
 
-	LZ4E_stats_reset(bcdev->read_stats);
-	LZ4E_stats_reset(bcdev->write_stats);
+	LZ4E_stats_reset(lzdev->read_stats);
+	LZ4E_stats_reset(lzdev->write_stats);
 
 	LZ4E_PR_INFO("request stats reset");
 	return 0;
@@ -113,16 +113,16 @@ static int LZ4E_reset_stats(const char *arg, const struct kernel_param *kpar)
 
 static int LZ4E_get_stats(char *buf, const struct kernel_param *kpar)
 {
-	struct LZ4E_dev *bcdev = bcomp.bcdev;
+	struct LZ4E_dev *lzdev = lzmod.lzdev;
 	int ret;
 
-	if (!bcdev) {
+	if (!lzdev) {
 		LZ4E_PR_ERR("no stats available");
 		return -ENODEV;
 	}
 
-	struct LZ4E_stats *read_stats = bcdev->read_stats;
-	struct LZ4E_stats *write_stats = bcdev->write_stats;
+	struct LZ4E_stats *read_stats = lzdev->read_stats;
+	struct LZ4E_stats *write_stats = lzdev->write_stats;
 
 	u64 r_reqs_total = (u64)atomic64_read(&read_stats->reqs_total);
 	u64 r_reqs_failed = (u64)atomic64_read(&read_stats->reqs_failed);
@@ -152,14 +152,14 @@ static int LZ4E_get_stats(char *buf, const struct kernel_param *kpar)
 
 static int __init LZ4E_module_init(void)
 {
-	int major = register_blkdev(LZ4E_MAJOR, LZ4E_MODULE_NAME);
+	int major = register_blkdev(LZ4E_MAJOR, LZ4E_DEVICE_NAME);
 
 	if (major < 0) {
 		LZ4E_PR_ERR("failed to load module");
 		return -EIO;
 	}
 
-	bcomp.major = major;
+	lzmod.major = major;
 
 	LZ4E_PR_INFO("module loaded successfully");
 	return 0;
@@ -167,40 +167,40 @@ static int __init LZ4E_module_init(void)
 
 static void __exit LZ4E_module_exit(void)
 {
-	int major = bcomp.major;
-	struct LZ4E_dev *bcdev = bcomp.bcdev;
+	int major = lzmod.major;
+	struct LZ4E_dev *lzdev = lzmod.lzdev;
 
 	unregister_blkdev((unsigned int)major, LZ4E_MODULE_NAME);
-	bcomp.major = 0;
+	lzmod.major = 0;
 
-	LZ4E_dev_free(bcdev);
-	bcomp.bcdev = NULL;
+	LZ4E_dev_free(lzdev);
+	lzmod.lzdev = NULL;
 
 	LZ4E_PR_INFO("module unloaded successfully");
 }
 
-static const struct kernel_param_ops blk_comp_map_ops = {
+static const struct kernel_param_ops lz4e_map_ops = {
 	.set = LZ4E_create_disk,
 	.get = LZ4E_get_disk_info,
 };
 
-static const struct kernel_param_ops blk_comp_unmap_ops = {
+static const struct kernel_param_ops lz4e_unmap_ops = {
 	.set = LZ4E_delete_disk,
 	.get = LZ4E_get_disk_info,
 };
 
-static const struct kernel_param_ops blk_comp_stats_ops = {
+static const struct kernel_param_ops lz4e_stats_ops = {
 	.set = LZ4E_reset_stats,
 	.get = LZ4E_get_stats,
 };
 
-module_param_cb(mapper, &blk_comp_map_ops, NULL, S_IRUGO | S_IWUSR);
+module_param_cb(mapper, &lz4e_map_ops, NULL, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(mapper, "Map to existing block device");
 
-module_param_cb(unmapper, &blk_comp_unmap_ops, NULL, S_IRUGO | S_IWUSR);
+module_param_cb(unmapper, &lz4e_unmap_ops, NULL, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(unmapper, "Unmap from existing block device");
 
-module_param_cb(stats, &blk_comp_stats_ops, NULL, S_IRUGO | S_IWUSR);
+module_param_cb(stats, &lz4e_stats_ops, NULL, S_IRUGO | S_IWUSR);
 MODULE_PARM_DESC(stats, "Block device request statistics");
 
 module_init(LZ4E_module_init);

@@ -11,12 +11,12 @@
 #include <linux/sprintf.h>
 #include <linux/stddef.h>
 
-#include "include/gendisk_utils.h"
+#include "include/lz4e_gendisk_utils.h"
 
-#include "include/blk_comp_dev.h"
-#include "include/blk_comp_static.h"
+#include "include/lz4e_dev.h"
+#include "include/lz4e_static.h"
 
-static const struct block_device_operations blk_comp_disk_ops = {
+static const struct block_device_operations lz4e_disk_ops = {
 	.owner = THIS_MODULE,
 	.submit_bio = LZ4E_dev_submit_bio,
 };
@@ -46,7 +46,7 @@ struct gendisk *LZ4E_gendisk_alloc(void)
 	return disk;
 }
 
-int LZ4E_gendisk_add(struct gendisk *disk, struct LZ4E_dev *bcdev, int major,
+int LZ4E_gendisk_add(struct gendisk *disk, struct LZ4E_dev *lzdev, int major,
 		     int first_minor)
 {
 	int ret;
@@ -54,15 +54,15 @@ int LZ4E_gendisk_add(struct gendisk *disk, struct LZ4E_dev *bcdev, int major,
 	disk->major = major;
 	disk->first_minor = first_minor;
 	disk->minors = 1;
-	disk->fops = &blk_comp_disk_ops;
-	disk->private_data = bcdev;
+	disk->fops = &lz4e_disk_ops;
+	disk->private_data = lzdev;
 
 	// Do not support multiple minors, disable partition support
 	disk->flags |= GENHD_FL_NO_PART;
 
-	set_capacity(disk, get_capacity(bcdev->under_dev->bdev->bd_disk));
+	set_capacity(disk, get_capacity(lzdev->under_dev->bdev->bd_disk));
 
-	ret = snprintf(disk->disk_name, DISK_NAME_LEN, LZ4E_MODULE_NAME "-%d",
+	ret = snprintf(disk->disk_name, DISK_NAME_LEN, LZ4E_MODULE_NAME "%d",
 		       disk->first_minor);
 	if (ret < 0) {
 		LZ4E_PR_ERR("failed to write generic disk name");

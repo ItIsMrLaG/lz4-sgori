@@ -5,14 +5,14 @@
  * This file is released under the GPL.
  */
 
-#ifndef BLK_COMP_UNDER_DEV_H
-#define BLK_COMP_UNDER_DEV_H
+#ifndef LZ4E_UNDER_DEV_H
+#define LZ4E_UNDER_DEV_H
 
 #include <linux/bio.h>
 #include <linux/blk_types.h>
 #include <linux/fs.h>
 
-#include "blk_comp_static.h"
+#include "lz4e_static.h"
 
 // Struct representing a physical block device
 struct LZ4E_under_dev {

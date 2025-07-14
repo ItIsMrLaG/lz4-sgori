@@ -5,16 +5,16 @@
  * This file is released under the GPL.
  */
 
-#ifndef BLK_COMP_MODULE_H
-#define BLK_COMP_MODULE_H
+#ifndef LZ4E_MODULE_H
+#define LZ4E_MODULE_H
 
-#include "blk_comp_dev.h"
-#include "blk_comp_static.h"
+#include "lz4e_dev.h"
+#include "lz4e_static.h"
 
 // Struct representing the block device module
 struct LZ4E_module {
-	struct LZ4E_dev *bcdev;
 	int major;
+	struct LZ4E_dev *lzdev;
 } LZ4E_ALIGN_16;
 
 #endif

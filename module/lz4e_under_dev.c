@@ -14,9 +14,9 @@
 #include <linux/slab.h>
 #include <linux/stddef.h>
 
-#include "include/blk_comp_under_dev.h"
+#include "include/lz4e_under_dev.h"
 
-#include "include/blk_comp_static.h"
+#include "include/lz4e_static.h"
 
 void LZ4E_under_dev_free(struct LZ4E_under_dev *under_dev)
 {
@@ -26,10 +26,10 @@ void LZ4E_under_dev_free(struct LZ4E_under_dev *under_dev)
 	struct file *fbdev = under_dev->fbdev;
 	struct bio_set *bset = under_dev->bset;
 
-	if (!fbdev)
+	if (fbdev)
 		bdev_fput(fbdev);
 
-	if (!bset) {
+	if (bset) {
 		bioset_exit(bset);
 		kfree(bset);
 	}

@@ -5,8 +5,8 @@
  * This file is released under the GPL.
  */
 
-#ifndef BLK_COMP_STATIC_H
-#define BLK_COMP_STATIC_H
+#ifndef LZ4E_STATIC_H
+#define LZ4E_STATIC_H
 
 #include <linux/printk.h>
 
@@ -39,20 +39,20 @@
 #define LZ4E_STATS_FORMAT \
 	"\
 read:\n\
-	reqs_total: %lld\n\
-	reqs_failed: %lld\n\
-	vec_count: %lld\n\
-	data_in_bytes: %lld\n\
+	reqs_total: %llu\n\
+	reqs_failed: %llu\n\
+	vec_count: %llu\n\
+	data_in_bytes: %llu\n\
 write:\n\
-	reqs_total: %lld\n\
-	reqs_failed: %lld\n\
-	vec_count: %lld\n\
-	data_in_bytes: %lld\n\
+	reqs_total: %llu\n\
+	reqs_failed: %llu\n\
+	vec_count: %llu\n\
+	data_in_bytes: %llu\n\
 all:\n\
-	reqs_total: %lld\n\
-	reqs_failed: %lld\n\
-	vec_count: %lld\n\
-	data_in_bytes: %lld\n\
+	reqs_total: %llu\n\
+	reqs_failed: %llu\n\
+	vec_count: %llu\n\
+	data_in_bytes: %llu\n\
 "
 
 #endif

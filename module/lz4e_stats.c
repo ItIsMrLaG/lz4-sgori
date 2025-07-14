@@ -12,49 +12,49 @@
 #include <linux/slab.h>
 #include <linux/stddef.h>
 
-#include "include/blk_comp_stats.h"
+#include "include/lz4e_stats.h"
 
-#include "include/blk_comp_static.h"
+#include "include/lz4e_static.h"
 
-void LZ4E_stats_free(struct LZ4E_stats *bcstats)
+void LZ4E_stats_free(struct LZ4E_stats *lzstats)
 {
-	kfree(bcstats);
+	kfree(lzstats);
 
 	LZ4E_PR_DEBUG("released request stats");
 }
 
 struct LZ4E_stats *LZ4E_stats_alloc(void)
 {
-	struct LZ4E_stats *bcstats;
+	struct LZ4E_stats *lzstats;
 
-	bcstats = kzalloc(sizeof(*bcstats), GFP_KERNEL);
-	if (!bcstats) {
+	lzstats = kzalloc(sizeof(*lzstats), GFP_KERNEL);
+	if (!lzstats) {
 		LZ4E_PR_ERR("failed to allocate request stats");
 		return NULL;
 	}
 
 	LZ4E_PR_DEBUG("allocated request stats");
-	return bcstats;
+	return lzstats;
 }
 
-void LZ4E_stats_update(struct LZ4E_stats *bcstats, struct bio *bio)
+void LZ4E_stats_update(struct LZ4E_stats *lzstats, struct bio *bio)
 {
-	atomic64_inc(&bcstats->reqs_total);
+	atomic64_inc(&lzstats->reqs_total);
 
 	if (bio->bi_status != BLK_STS_OK) {
-		atomic64_inc(&bcstats->reqs_failed);
+		atomic64_inc(&lzstats->reqs_failed);
 		return;
 	}
 
-	atomic64_add((s64)bio->bi_vcnt, &bcstats->vec_count);
-	atomic64_add((s64)bio->bi_iter.bi_size, &bcstats->data_in_bytes);
+	atomic64_add((s64)bio->bi_vcnt, &lzstats->vec_count);
+	atomic64_add((s64)bio->bi_iter.bi_size, &lzstats->data_in_bytes);
 
 	LZ4E_PR_DEBUG("updated request stats");
 }
 
-void LZ4E_stats_reset(struct LZ4E_stats *bcstats)
+void LZ4E_stats_reset(struct LZ4E_stats *lzstats)
 {
-	memset(bcstats, 0, sizeof(*bcstats));
+	memset(lzstats, 0, sizeof(*lzstats));
 
 	LZ4E_PR_DEBUG("reset request stats");
 }
