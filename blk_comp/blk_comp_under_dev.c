@@ -24,8 +24,8 @@ void blk_comp_under_dev_free(struct blk_comp_under_dev *under_dev)
 	if (under_dev == NULL)
 		return;
 
-	struct file    *fbdev = under_dev->fbdev;
-	struct bio_set *bset  = under_dev->bset;
+	struct file *fbdev = under_dev->fbdev;
+	struct bio_set *bset = under_dev->bset;
 
 	if (fbdev != NULL)
 		bdev_fput(fbdev);
@@ -44,7 +44,7 @@ void blk_comp_under_dev_free(struct blk_comp_under_dev *under_dev)
 struct blk_comp_under_dev *blk_comp_under_dev_alloc(void)
 {
 	struct blk_comp_under_dev *under_dev = NULL;
-	struct bio_set		  *bset	     = NULL;
+	struct bio_set *bset = NULL;
 
 	under_dev = kzalloc(sizeof(*under_dev), GFP_KERNEL);
 	if (under_dev == NULL) {
@@ -52,7 +52,7 @@ struct blk_comp_under_dev *blk_comp_under_dev_alloc(void)
 		return NULL;
 	}
 
-	bset		= kzalloc(sizeof(*bset), GFP_KERNEL);
+	bset = kzalloc(sizeof(*bset), GFP_KERNEL);
 	under_dev->bset = bset;
 	if (bset == NULL) {
 		BLK_COMP_PR_ERR("failed to allocate bio set");
@@ -69,12 +69,12 @@ free_device:
 
 // Open underlying device
 int blk_comp_under_dev_open(struct blk_comp_under_dev *under_dev,
-			    const char		      *dev_path)
+			    const char *dev_path)
 {
-	int		     ret   = 0;
-	struct block_device *bdev  = NULL;
-	struct file	    *fbdev = NULL;
-	struct bio_set	    *bset  = under_dev->bset;
+	int ret = 0;
+	struct block_device *bdev = NULL;
+	struct file *fbdev = NULL;
+	struct bio_set *bset = under_dev->bset;
 
 	fbdev = bdev_file_open_by_path(dev_path, BLK_OPEN_READ | BLK_OPEN_WRITE,
 				       under_dev, NULL);
@@ -83,8 +83,8 @@ int blk_comp_under_dev_open(struct blk_comp_under_dev *under_dev,
 		return (int)PTR_ERR(fbdev);
 	}
 
-	bdev		 = file_bdev(fbdev);
-	under_dev->bdev	 = bdev;
+	bdev = file_bdev(fbdev);
+	under_dev->bdev = bdev;
 	under_dev->fbdev = fbdev;
 
 	ret = bioset_init(bset, BLK_COMP_BIOSET_SIZE, 0, BIOSET_NEED_BVECS);

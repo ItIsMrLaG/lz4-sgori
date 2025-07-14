@@ -17,9 +17,9 @@
 
 // Struct representing request to the underlying device
 struct blk_comp_req {
-	struct bio		  *original_bio;
+	struct bio *original_bio;
 	struct blk_comp_under_dev *under_dev;
-	struct blk_comp_stats	  *stats_to_update;
+	struct blk_comp_stats *stats_to_update;
 } BLK_COMP_ALIGN_32;
 
 // Allocate request context
@@ -27,7 +27,7 @@ struct blk_comp_req *blk_comp_req_alloc(void);
 
 // Initialize request to device with given bio
 blk_status_t blk_comp_req_init(struct blk_comp_req *bcreq,
-			       struct bio	   *original_bio,
+			       struct bio *original_bio,
 			       struct blk_comp_dev *bcdev);
 
 // Submit request to underlying device

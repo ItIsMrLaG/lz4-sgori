@@ -44,11 +44,11 @@ struct blk_comp_req *blk_comp_req_alloc(void)
 
 // Initialize request to device with given bio
 blk_status_t blk_comp_req_init(struct blk_comp_req *bcreq,
-			       struct bio	   *original_bio,
+			       struct bio *original_bio,
 			       struct blk_comp_dev *bcdev)
 {
-	struct blk_comp_under_dev *under_dev	   = bcdev->under_dev;
-	struct blk_comp_stats	  *stats_to_update = NULL;
+	struct blk_comp_under_dev *under_dev = bcdev->under_dev;
+	struct blk_comp_stats *stats_to_update = NULL;
 
 	enum req_op op_type = bio_op(original_bio);
 
@@ -64,8 +64,8 @@ blk_status_t blk_comp_req_init(struct blk_comp_req *bcreq,
 		return BLK_STS_NOTSUPP;
 	}
 
-	bcreq->original_bio    = original_bio;
-	bcreq->under_dev       = under_dev;
+	bcreq->original_bio = original_bio;
+	bcreq->under_dev = under_dev;
 	bcreq->stats_to_update = stats_to_update;
 
 	BLK_COMP_PR_DEBUG("initialized request");
@@ -75,8 +75,8 @@ blk_status_t blk_comp_req_init(struct blk_comp_req *bcreq,
 // Callback for ending new requests
 static void blk_comp_end_io(struct bio *new_bio)
 {
-	struct blk_comp_req   *bcreq	       = new_bio->bi_private;
-	struct bio	      *original_bio    = bcreq->original_bio;
+	struct blk_comp_req *bcreq = new_bio->bi_private;
+	struct bio *original_bio = bcreq->original_bio;
 	struct blk_comp_stats *stats_to_update = bcreq->stats_to_update;
 
 	blk_comp_stats_update(stats_to_update, new_bio);
@@ -93,10 +93,10 @@ static void blk_comp_end_io(struct bio *new_bio)
 // Submit request to underlying device
 blk_status_t blk_comp_req_submit(struct blk_comp_req *bcreq)
 {
-	struct bio		  *original_bio = bcreq->original_bio;
-	struct blk_comp_under_dev *under_dev	= bcreq->under_dev;
-	struct block_device	  *bdev		= under_dev->bdev;
-	struct bio_set		  *bset		= under_dev->bset;
+	struct bio *original_bio = bcreq->original_bio;
+	struct blk_comp_under_dev *under_dev = bcreq->under_dev;
+	struct block_device *bdev = under_dev->bdev;
+	struct bio_set *bset = under_dev->bset;
 
 	struct bio *new_bio =
 		bio_alloc_clone(bdev, original_bio, GFP_NOIO, bset);
@@ -105,7 +105,7 @@ blk_status_t blk_comp_req_submit(struct blk_comp_req *bcreq)
 		return BLK_STS_RESOURCE;
 	}
 
-	new_bio->bi_end_io  = blk_comp_end_io;
+	new_bio->bi_end_io = blk_comp_end_io;
 	new_bio->bi_private = bcreq;
 
 	submit_bio_noacct(new_bio);

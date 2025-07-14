@@ -18,7 +18,7 @@
 
 // Supported block device operations
 static const struct block_device_operations blk_comp_disk_ops = {
-	.owner	    = THIS_MODULE,
+	.owner = THIS_MODULE,
 	.submit_bio = blk_comp_dev_submit_bio,
 };
 
@@ -55,10 +55,10 @@ int blk_comp_gendisk_add(struct gendisk *disk, struct blk_comp_dev *bcdev,
 {
 	int ret = 0;
 
-	disk->major	   = major;
-	disk->first_minor  = first_minor;
-	disk->minors	   = 1;
-	disk->fops	   = &blk_comp_disk_ops;
+	disk->major = major;
+	disk->first_minor = first_minor;
+	disk->minors = 1;
+	disk->fops = &blk_comp_disk_ops;
 	disk->private_data = bcdev;
 
 	// Do not support multiple minors, disable partition support

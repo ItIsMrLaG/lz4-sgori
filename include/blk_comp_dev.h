@@ -17,10 +17,10 @@
 
 // Struct representing a device to be managed by the driver
 struct blk_comp_dev {
-	struct gendisk		  *disk;
+	struct gendisk *disk;
 	struct blk_comp_under_dev *under_dev;
-	struct blk_comp_stats	  *read_stats;
-	struct blk_comp_stats	  *write_stats;
+	struct blk_comp_stats *read_stats;
+	struct blk_comp_stats *write_stats;
 } BLK_COMP_ALIGN_32;
 
 // Allocate block device context

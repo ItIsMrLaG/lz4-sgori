@@ -50,7 +50,7 @@ void blk_comp_stats_update(struct blk_comp_stats *bcstats, struct bio *bio)
 		return;
 	}
 
-	struct bio_vec	 bvec;
+	struct bio_vec bvec;
 	struct bvec_iter iter;
 	bio_for_each_segment (bvec, bio, iter) {
 		atomic64_inc(&bcstats->vec_count);

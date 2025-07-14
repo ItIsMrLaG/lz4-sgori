@@ -26,10 +26,10 @@ static struct blk_comp bcomp = {};
 // NOLINTBEGIN(misc-unused-parameters)
 
 // Create disk over device at specified path
-static int blk_comp_create_disk(const char		  *arg,
+static int blk_comp_create_disk(const char *arg,
 				const struct kernel_param *kpar)
 {
-	int		     ret   = 0;
+	int ret = 0;
 	struct blk_comp_dev *bcdev = bcomp.bcdev;
 
 	if (bcdev != NULL) {
@@ -60,7 +60,7 @@ free_device:
 }
 
 // Remove existing disk
-static int blk_comp_delete_disk(const char		  *arg,
+static int blk_comp_delete_disk(const char *arg,
 				const struct kernel_param *kpar)
 {
 	struct blk_comp_dev *bcdev = bcomp.bcdev;
@@ -80,7 +80,7 @@ static int blk_comp_delete_disk(const char		  *arg,
 // Get info about existing disk
 static int blk_comp_get_disk_info(char *buf, const struct kernel_param *kpar)
 {
-	int		     ret   = 0;
+	int ret = 0;
 	struct blk_comp_dev *bcdev = bcomp.bcdev;
 
 	if (bcdev == NULL) {
@@ -88,7 +88,7 @@ static int blk_comp_get_disk_info(char *buf, const struct kernel_param *kpar)
 		return -ENODEV;
 	}
 
-	char *disk_name	      = bcdev->disk->disk_name;
+	char *disk_name = bcdev->disk->disk_name;
 	char *under_disk_name = bcdev->under_dev->bdev->bd_disk->disk_name;
 
 	ret = sysfs_emit(buf, "%s: proxy over %s\n", disk_name,
@@ -100,7 +100,7 @@ static int blk_comp_get_disk_info(char *buf, const struct kernel_param *kpar)
 }
 
 // Reset request statistics of existing disk
-static int blk_comp_reset_stats(const char		  *arg,
+static int blk_comp_reset_stats(const char *arg,
 				const struct kernel_param *kpar)
 {
 	struct blk_comp_dev *bcdev = bcomp.bcdev;
@@ -110,7 +110,7 @@ static int blk_comp_reset_stats(const char		  *arg,
 		return -ENODEV;
 	}
 
-	struct blk_comp_stats *read_stats  = bcdev->read_stats;
+	struct blk_comp_stats *read_stats = bcdev->read_stats;
 	struct blk_comp_stats *write_stats = bcdev->write_stats;
 
 	blk_comp_stats_reset(read_stats);
@@ -123,7 +123,7 @@ static int blk_comp_reset_stats(const char		  *arg,
 // Get request statistics of existing disk
 static int blk_comp_get_stats(char *buf, const struct kernel_param *kpar)
 {
-	int		     ret   = 0;
+	int ret = 0;
 	struct blk_comp_dev *bcdev = bcomp.bcdev;
 
 	if (bcdev == NULL) {
@@ -131,17 +131,17 @@ static int blk_comp_get_stats(char *buf, const struct kernel_param *kpar)
 		return -ENODEV;
 	}
 
-	struct blk_comp_stats *read_stats  = bcdev->read_stats;
+	struct blk_comp_stats *read_stats = bcdev->read_stats;
 	struct blk_comp_stats *write_stats = bcdev->write_stats;
 
-	long long r_reqs_total	  = atomic64_read(&read_stats->reqs_total);
-	long long r_reqs_failed	  = atomic64_read(&read_stats->reqs_failed);
-	long long r_vec_count	  = atomic64_read(&read_stats->vec_count);
+	long long r_reqs_total = atomic64_read(&read_stats->reqs_total);
+	long long r_reqs_failed = atomic64_read(&read_stats->reqs_failed);
+	long long r_vec_count = atomic64_read(&read_stats->vec_count);
 	long long r_data_in_bytes = atomic64_read(&read_stats->data_in_bytes);
 
-	long long w_reqs_total	  = atomic64_read(&write_stats->reqs_total);
-	long long w_reqs_failed	  = atomic64_read(&write_stats->reqs_failed);
-	long long w_vec_count	  = atomic64_read(&write_stats->vec_count);
+	long long w_reqs_total = atomic64_read(&write_stats->reqs_total);
+	long long w_reqs_failed = atomic64_read(&write_stats->reqs_failed);
+	long long w_vec_count = atomic64_read(&write_stats->vec_count);
 	long long w_data_in_bytes = atomic64_read(&write_stats->data_in_bytes);
 
 	ret = sysfs_emit(buf, BLK_COMP_STATS_FORMAT, r_reqs_total,
@@ -179,7 +179,7 @@ static int __init blk_comp_init(void)
 // Module exit callback
 static void __exit blk_comp_exit(void)
 {
-	int		     major = bcomp.major;
+	int major = bcomp.major;
 	struct blk_comp_dev *bcdev = bcomp.bcdev;
 
 	unregister_blkdev((unsigned int)major, BLK_COMP_MODULE_NAME);

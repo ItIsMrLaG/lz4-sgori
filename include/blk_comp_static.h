@@ -13,7 +13,7 @@
 #define BLK_COMP_MODULE_NAME "blk_comp"
 #define BLK_COMP_DEVICE_NAME "blk-comp-dev"
 
-#define BLK_COMP_MAJOR	     0
+#define BLK_COMP_MAJOR 0
 #define BLK_COMP_FIRST_MINOR 0
 
 // Bio set pool size to use
