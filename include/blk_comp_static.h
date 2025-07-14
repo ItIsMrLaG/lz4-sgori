@@ -10,33 +10,33 @@
 
 #include <linux/printk.h>
 
-#define BLK_COMP_MODULE_NAME "blk_comp"
-#define BLK_COMP_DEVICE_NAME "blk-comp-dev"
+#define LZ4E_MODULE_NAME "lz4e"
+#define LZ4E_DEVICE_NAME "lz4e-dev"
 
-#define BLK_COMP_MAJOR 0
-#define BLK_COMP_FIRST_MINOR 0
+#define LZ4E_MAJOR 0
+#define LZ4E_FIRST_MINOR 0
 
 // Bio set pool size to use
-#define BLK_COMP_BIOSET_SIZE 1024
+#define LZ4E_BIOSET_SIZE 1024
 
 // Struct memory alignment attributes
-#define BLK_COMP_ALIGN_16 __attribute__((packed, aligned(16)))
-#define BLK_COMP_ALIGN_32 __attribute__((packed, aligned(32)))
+#define LZ4E_ALIGN_16 __attribute__((packed, aligned(16)))
+#define LZ4E_ALIGN_32 __attribute__((packed, aligned(32)))
 
 // Print formatted error to logs
-#define BLK_COMP_PR_ERR(fmt, ...) \
-	pr_err("%s: " fmt "\n", BLK_COMP_MODULE_NAME, ##__VA_ARGS__)
+#define LZ4E_PR_ERR(fmt, ...) \
+	pr_err("%s: " fmt "\n", LZ4E_MODULE_NAME, ##__VA_ARGS__)
 
 // Print formatted info to logs
-#define BLK_COMP_PR_INFO(fmt, ...) \
-	pr_info("%s: " fmt "\n", BLK_COMP_MODULE_NAME, ##__VA_ARGS__)
+#define LZ4E_PR_INFO(fmt, ...) \
+	pr_info("%s: " fmt "\n", LZ4E_MODULE_NAME, ##__VA_ARGS__)
 
 // Print formatted debug info to logs
-#define BLK_COMP_PR_DEBUG(fmt, ...) \
-	pr_debug("%s: " fmt "\n", BLK_COMP_MODULE_NAME, ##__VA_ARGS__)
+#define LZ4E_PR_DEBUG(fmt, ...) \
+	pr_debug("%s: " fmt "\n", LZ4E_MODULE_NAME, ##__VA_ARGS__)
 
 // Format string for request statistics
-#define BLK_COMP_STATS_FORMAT \
+#define LZ4E_STATS_FORMAT \
 	"\
 read:\n\
 	reqs_total: %lld\n\

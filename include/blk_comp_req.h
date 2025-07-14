@@ -16,24 +16,23 @@
 #include "blk_comp_under_dev.h"
 
 // Struct representing request to the underlying device
-struct blk_comp_req {
+struct LZ4E_req {
 	struct bio *original_bio;
-	struct blk_comp_under_dev *under_dev;
-	struct blk_comp_stats *stats_to_update;
-} BLK_COMP_ALIGN_32;
+	struct LZ4E_under_dev *under_dev;
+	struct LZ4E_stats *stats_to_update;
+} LZ4E_ALIGN_32;
 
 // Allocate request context
-struct blk_comp_req *blk_comp_req_alloc(void);
+struct LZ4E_req *LZ4E_req_alloc(void);
 
 // Initialize request to device with given bio
-blk_status_t blk_comp_req_init(struct blk_comp_req *bcreq,
-			       struct bio *original_bio,
-			       struct blk_comp_dev *bcdev);
+blk_status_t LZ4E_req_init(struct LZ4E_req *bcreq, struct bio *original_bio,
+			   struct LZ4E_dev *bcdev);
 
 // Submit request to underlying device
-blk_status_t blk_comp_req_submit(struct blk_comp_req *bcreq);
+blk_status_t LZ4E_req_submit(struct LZ4E_req *bcreq);
 
 // Free request context
-void blk_comp_req_free(struct blk_comp_req *bcreq);
+void LZ4E_req_free(struct LZ4E_req *bcreq);
 
 #endif

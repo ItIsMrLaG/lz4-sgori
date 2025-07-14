@@ -5,9 +5,8 @@
  * This file is released under the GPL.
  */
 
-#include <linux/bio.h>
+#include <asm-generic/int-ll64.h>
 #include <linux/blk_types.h>
-#include <linux/bvec.h>
 #include <linux/fortify-string.h>
 #include <linux/gfp_types.h>
 #include <linux/slab.h>
@@ -17,31 +16,28 @@
 
 #include "include/blk_comp_static.h"
 
-// Free request statistics
-void blk_comp_stats_free(struct blk_comp_stats *bcstats)
+void LZ4E_stats_free(struct LZ4E_stats *bcstats)
 {
 	kfree(bcstats);
 
-	BLK_COMP_PR_DEBUG("released request stats");
+	LZ4E_PR_DEBUG("released request stats");
 }
 
-// Allocate request statistics
-struct blk_comp_stats *blk_comp_stats_alloc(void)
+struct LZ4E_stats *LZ4E_stats_alloc(void)
 {
-	struct blk_comp_stats *bcstats = NULL;
+	struct LZ4E_stats *bcstats;
 
 	bcstats = kzalloc(sizeof(*bcstats), GFP_KERNEL);
-	if (bcstats == NULL) {
-		BLK_COMP_PR_ERR("failed to allocate request stats");
+	if (!bcstats) {
+		LZ4E_PR_ERR("failed to allocate request stats");
 		return NULL;
 	}
 
-	BLK_COMP_PR_DEBUG("allocated request stats");
+	LZ4E_PR_DEBUG("allocated request stats");
 	return bcstats;
 }
 
-// Update statistics using given bio
-void blk_comp_stats_update(struct blk_comp_stats *bcstats, struct bio *bio)
+void LZ4E_stats_update(struct LZ4E_stats *bcstats, struct bio *bio)
 {
 	atomic64_inc(&bcstats->reqs_total);
 
@@ -50,20 +46,15 @@ void blk_comp_stats_update(struct blk_comp_stats *bcstats, struct bio *bio)
 		return;
 	}
 
-	struct bio_vec bvec;
-	struct bvec_iter iter;
-	bio_for_each_segment (bvec, bio, iter) {
-		atomic64_inc(&bcstats->vec_count);
-		atomic64_add((long long)bvec.bv_len, &bcstats->data_in_bytes);
-	}
+	atomic64_add((s64)bio->bi_vcnt, &bcstats->vec_count);
+	atomic64_add((s64)bio->bi_iter.bi_size, &bcstats->data_in_bytes);
 
-	BLK_COMP_PR_DEBUG("updated request stats");
+	LZ4E_PR_DEBUG("updated request stats");
 }
 
-// Reset request statistics
-void blk_comp_stats_reset(struct blk_comp_stats *bcstats)
+void LZ4E_stats_reset(struct LZ4E_stats *bcstats)
 {
 	memset(bcstats, 0, sizeof(*bcstats));
 
-	BLK_COMP_PR_DEBUG("reset request stats");
+	LZ4E_PR_DEBUG("reset request stats");
 }

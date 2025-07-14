@@ -14,23 +14,23 @@
 #include "blk_comp_static.h"
 
 // Struct representing request statistics of a disk for one of the operations
-struct blk_comp_stats {
+struct LZ4E_stats {
 	atomic64_t reqs_total;
 	atomic64_t reqs_failed;
 	atomic64_t vec_count;
 	atomic64_t data_in_bytes;
-} BLK_COMP_ALIGN_32;
+} LZ4E_ALIGN_32;
 
 // Allocate request statistics
-struct blk_comp_stats *blk_comp_stats_alloc(void);
+struct LZ4E_stats *LZ4E_stats_alloc(void);
 
 // Update statistics using given bio
-void blk_comp_stats_update(struct blk_comp_stats *bcstats, struct bio *bio);
+void LZ4E_stats_update(struct LZ4E_stats *bcstats, struct bio *bio);
 
 // Reset request statistics
-void blk_comp_stats_reset(struct blk_comp_stats *bcstats);
+void LZ4E_stats_reset(struct LZ4E_stats *bcstats);
 
 // Free request statistics
-void blk_comp_stats_free(struct blk_comp_stats *bcstats);
+void LZ4E_stats_free(struct LZ4E_stats *bcstats);
 
 #endif

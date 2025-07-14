@@ -12,9 +12,9 @@
 #include "blk_comp_static.h"
 
 // Struct representing the block device module
-struct blk_comp {
+struct LZ4E_module {
+	struct LZ4E_dev *bcdev;
 	int major;
-	struct blk_comp_dev *bcdev;
-} BLK_COMP_ALIGN_16;
+} LZ4E_ALIGN_16;
 
 #endif

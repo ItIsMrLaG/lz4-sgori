@@ -13,13 +13,13 @@
 #include "blk_comp_dev.h"
 
 // Allocate generic disk context
-struct gendisk *blk_comp_gendisk_alloc(void);
+struct gendisk *LZ4E_gendisk_alloc(void);
 
 // Add generic disk
-int blk_comp_gendisk_add(struct gendisk *disk, struct blk_comp_dev *bcdev,
-			 int major, int first_minor);
+int LZ4E_gendisk_add(struct gendisk *disk, struct LZ4E_dev *bcdev, int major,
+		     int first_minor);
 
 // Free generic disk context
-void blk_comp_gendisk_free(struct gendisk *disk);
+void LZ4E_gendisk_free(struct gendisk *disk);
 
 #endif
