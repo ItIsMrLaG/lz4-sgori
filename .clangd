@@ -1,0 +1,10 @@
+If:
+  PathExclude: build/*
+
+CompileFlags:
+  Add: [-Wall, -Wconversion, -Wformat, -Wuninitialized]
+  Remove: [-m*, -f*]
+
+Diagnostics:
+  ClangTidy:
+    FastCheckFilter: None
