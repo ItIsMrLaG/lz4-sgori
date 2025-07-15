@@ -1,4 +1,4 @@
-set -e
+set -euxo pipefail
 
 if [ ! -f compile_commands.json ]; then
 	bear -- make
