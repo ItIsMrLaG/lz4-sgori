@@ -6,8 +6,6 @@ COMPILE_COMMANDS := $(PWD)/compile_commands.json
 
 .PHONY: clean
 
-.PHONY: clean
-
 all: build
 
 build:

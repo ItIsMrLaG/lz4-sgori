@@ -1,6 +1,6 @@
-set -e
-
 source test/literals.sh
+
+set -euxo pipefail
 
 setup() {
 	make
