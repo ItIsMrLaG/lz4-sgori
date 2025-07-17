@@ -43,6 +43,7 @@ Checks:
   - '-cppcoreguidelines-interfaces-global-init'
   - '-google-readability-braces-around-statements'
   - '-hicpp-braces-around-statements'
+  - '-hicpp-no-assembler'
   - '-hicpp-signed-bitwise'
   - '-llvm-include-order'
   - '-performance-no-int-to-ptr'

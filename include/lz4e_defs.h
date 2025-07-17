@@ -37,11 +37,10 @@
 
 // TODO:(kogora)[f]: mind about LICENSE |^
 
-#include <linux/unaligned.h>
-
 #include <linux/bitops.h>
-#include <linux/string.h>	 /* memset, memcpy */
 #include <linux/lz4.h>
+#include <linux/string.h> /* memset, memcpy */
+#include <linux/unaligned.h>
 
 #define FORCE_INLINE __always_inline
 
@@ -50,10 +49,10 @@
  **************************************/
 #include <linux/types.h>
 
-typedef	uint8_t BYTE;
+typedef uint8_t BYTE;
 typedef uint16_t U16;
 typedef uint32_t U32;
-typedef	int32_t S32;
+typedef int32_t S32;
 typedef uint64_t U64;
 typedef uintptr_t uptrval;
 
@@ -84,7 +83,7 @@ typedef uintptr_t uptrval;
  * ensure it's possible to write 2 x wildcopyLength
  * without overflowing output buffer
  */
-#define MATCH_SAFEGUARD_DISTANCE  ((2 * WILDCOPYLENGTH) - MINMATCH)
+#define MATCH_SAFEGUARD_DISTANCE ((2 * WILDCOPYLENGTH) - MINMATCH)
 
 /* Increase this value ==> compression run slower on incompressible data */
 #define LZ4_SKIPTRIGGER 6
@@ -98,8 +97,8 @@ typedef uintptr_t uptrval;
 #define MAX_DISTANCE LZ4_DISTANCE_MAX
 #define STEPSIZE sizeof(size_t)
 
-#define ML_BITS	4
-#define ML_MASK	((1U << ML_BITS) - 1)
+#define ML_BITS 4
+#define ML_MASK ((1U << ML_BITS) - 1)
 #define RUN_BITS (8 - ML_BITS)
 #define RUN_MASK ((1U << RUN_BITS) - 1)
 
@@ -147,7 +146,8 @@ static FORCE_INLINE void LZ4_writeLE16(void *memPtr, U16 value)
  * standard compliant, so apply its specialized memcpy() inlining logic. When
  * possible, use __builtin_memcpy() to tell the compiler to analyze memcpy()
  * as-if it were standard compliant, so it can inline it in freestanding
- * environments. This is needed when decompressing the Linux Kernel, for example.
+ * environments. This is needed when decompressing the Linux Kernel, for
+ * example.
  */
 #define LZ4_memcpy(dst, src, size) __builtin_memcpy(dst, src, size)
 #define LZ4_memmove(dst, src, size) __builtin_memmove(dst, src, size)
@@ -171,8 +171,8 @@ static FORCE_INLINE void LZ4_copy8(void *dst, const void *src)
  * customized variant of memcpy,
  * which can overwrite up to 7 bytes beyond dstEnd
  */
-static FORCE_INLINE void LZ4_wildCopy(void *dstPtr,
-	const void *srcPtr, void *dstEnd)
+static FORCE_INLINE void LZ4_wildCopy(void *dstPtr, const void *srcPtr,
+				      void *dstEnd)
 {
 	BYTE *d = (BYTE *)dstPtr;
 	const BYTE *s = (const BYTE *)srcPtr;
@@ -194,10 +194,8 @@ static FORCE_INLINE unsigned int LZ4_NbCommonBytes(register size_t val)
 #endif
 }
 
-static FORCE_INLINE unsigned int LZ4_count(
-	const BYTE *pIn,
-	const BYTE *pMatch,
-	const BYTE *pInLimit)
+static FORCE_INLINE unsigned int LZ4_count(const BYTE *pIn, const BYTE *pMatch,
+					   const BYTE *pInLimit)
 {
 	const BYTE *const pStart = pIn;
 
@@ -216,15 +214,13 @@ static FORCE_INLINE unsigned int LZ4_count(
 	}
 
 #if LZ4_ARCH64
-	if ((pIn < (pInLimit - 3))
-		&& (LZ4_read32(pMatch) == LZ4_read32(pIn))) {
+	if ((pIn < (pInLimit - 3)) && (LZ4_read32(pMatch) == LZ4_read32(pIn))) {
 		pIn += 4;
 		pMatch += 4;
 	}
 #endif
 
-	if ((pIn < (pInLimit - 1))
-		&& (LZ4_read16(pMatch) == LZ4_read16(pIn))) {
+	if ((pIn < (pInLimit - 1)) && (LZ4_read16(pMatch) == LZ4_read16(pIn))) {
 		pIn += 2;
 		pMatch += 2;
 	}
@@ -244,6 +240,6 @@ typedef enum { noDictIssue = 0, dictSmall } dictIssue_directive;
 typedef enum { endOnOutputSize = 0, endOnInputSize = 1 } endCondition_directive;
 typedef enum { decode_full_block = 0, partial_decode = 1 } earlyEnd_directive;
 
-#define LZ4_STATIC_ASSERT(c)	BUILD_BUG_ON(!(c))
+#define LZ4_STATIC_ASSERT(c) BUILD_BUG_ON(!(c))
 
 #endif
