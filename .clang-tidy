@@ -43,6 +43,7 @@ Checks:
   - '-cppcoreguidelines-interfaces-global-init'
   - '-google-readability-braces-around-statements'
   - '-hicpp-braces-around-statements'
+  - '-hicpp-no-assembler'
   - '-hicpp-signed-bitwise'
   - '-llvm-include-order'
   - '-performance-no-int-to-ptr'
@@ -68,11 +69,11 @@ CheckOptions:
   - key: readability-identifier-naming.EnumPrefix
     value: 'LZ4E_'
   - key: readability-identifier-naming.FunctionPrefix
-    value: 'LZ4E_'
+    value: 'lz4e_'
   - key: readability-identifier-naming.MacroDefinitionPrefix
     value: 'LZ4E_'
   - key: readability-identifier-naming.StructPrefix
-    value: 'LZ4E_'
+    value: 'lz4e_'
 
 FormatStyle: 'llvm'
 

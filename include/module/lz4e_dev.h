@@ -16,24 +16,24 @@
 #include "lz4e_under_dev.h"
 
 // Struct representing a device to be managed by the driver
-struct LZ4E_dev {
+struct lz4e_dev {
 	struct gendisk *disk;
-	struct LZ4E_under_dev *under_dev;
-	struct LZ4E_stats *read_stats;
-	struct LZ4E_stats *write_stats;
+	struct lz4e_under_dev *under_dev;
+	struct lz4e_stats *read_stats;
+	struct lz4e_stats *write_stats;
 } LZ4E_ALIGN_32;
 
 // Allocate block device context
-struct LZ4E_dev *LZ4E_dev_alloc(void);
+struct lz4e_dev *lz4e_dev_alloc(void);
 
 // Initialize device to be managed by the driver
-int LZ4E_dev_init(struct LZ4E_dev *lzdev, const char *dev_path, int major,
+int lz4e_dev_init(struct lz4e_dev *lzdev, const char *dev_path, int major,
 		  int first_minor);
 
 // Free block device context
-void LZ4E_dev_free(struct LZ4E_dev *lzdev);
+void lz4e_dev_free(struct lz4e_dev *lzdev);
 
 // Submit bio request to device
-void LZ4E_dev_submit_bio(struct bio *original_bio);
+void lz4e_dev_submit_bio(struct bio *original_bio);
 
 #endif

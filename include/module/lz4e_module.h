@@ -12,9 +12,9 @@
 #include "lz4e_static.h"
 
 // Struct representing the block device module
-struct LZ4E_module {
+struct lz4e_module {
 	int major;
-	struct LZ4E_dev *lzdev;
+	struct lz4e_dev *lzdev;
 } LZ4E_ALIGN_16;
 
 #endif

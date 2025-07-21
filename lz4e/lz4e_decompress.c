@@ -33,14 +33,13 @@
 /*-************************************
  *	Dependencies
  **************************************/
-#include "lz4e_defs.h"
-
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/unaligned.h>
 
-#include "../include/lz4e.h"
+#include "include/lz4e/lz4e.h"
+#include "include/lz4e/lz4e_defs.h"
 
 /*-*****************************
  *	Decompression functions

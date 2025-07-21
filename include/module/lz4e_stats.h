@@ -14,7 +14,7 @@
 #include "lz4e_static.h"
 
 // Struct representing request statistics of a disk for one of the operations
-struct LZ4E_stats {
+struct lz4e_stats {
 	atomic64_t reqs_total;
 	atomic64_t reqs_failed;
 	atomic64_t vec_count;
@@ -22,15 +22,15 @@ struct LZ4E_stats {
 } LZ4E_ALIGN_32;
 
 // Allocate request statistics
-struct LZ4E_stats *LZ4E_stats_alloc(void);
+struct lz4e_stats *lz4e_stats_alloc(void);
 
 // Update statistics using given bio
-void LZ4E_stats_update(struct LZ4E_stats *lzstats, struct bio *bio);
+void lz4e_stats_update(struct lz4e_stats *lzstats, struct bio *bio);
 
 // Reset request statistics
-void LZ4E_stats_reset(struct LZ4E_stats *lzstats);
+void lz4e_stats_reset(struct lz4e_stats *lzstats);
 
 // Free request statistics
-void LZ4E_stats_free(struct LZ4E_stats *lzstats);
+void lz4e_stats_free(struct lz4e_stats *lzstats);
 
 #endif

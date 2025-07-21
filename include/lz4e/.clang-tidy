@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: GPL-2.0
+#
+# clang-tidy configuration file. Intended for clang-tidy >= 20.
+#
+# For more information, see:
+#
+#   https://clang.llvm.org/extra/clang-tidy/
+#   https://clang.llvm.org/extra/clang-tidy/checks/list.html
+#
+---
+Checks:
+  - '-*'
+
+FormatStyle: 'llvm'
+
+HeaderFileExtensions: ['h']
+ImplementationFileExtensions: ['c']
+...

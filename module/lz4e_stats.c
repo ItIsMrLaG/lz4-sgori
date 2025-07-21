@@ -12,20 +12,20 @@
 #include <linux/slab.h>
 #include <linux/stddef.h>
 
-#include "include/lz4e_stats.h"
+#include "include/module/lz4e_stats.h"
 
-#include "include/lz4e_static.h"
+#include "include/module/lz4e_static.h"
 
-void LZ4E_stats_free(struct LZ4E_stats *lzstats)
+void lz4e_stats_free(struct lz4e_stats *lzstats)
 {
 	kfree(lzstats);
 
 	LZ4E_PR_DEBUG("released request stats");
 }
 
-struct LZ4E_stats *LZ4E_stats_alloc(void)
+struct lz4e_stats *lz4e_stats_alloc(void)
 {
-	struct LZ4E_stats *lzstats;
+	struct lz4e_stats *lzstats;
 
 	lzstats = kzalloc(sizeof(*lzstats), GFP_KERNEL);
 	if (!lzstats) {
@@ -37,7 +37,7 @@ struct LZ4E_stats *LZ4E_stats_alloc(void)
 	return lzstats;
 }
 
-void LZ4E_stats_update(struct LZ4E_stats *lzstats, struct bio *bio)
+void lz4e_stats_update(struct lz4e_stats *lzstats, struct bio *bio)
 {
 	atomic64_inc(&lzstats->reqs_total);
 
@@ -52,7 +52,7 @@ void LZ4E_stats_update(struct LZ4E_stats *lzstats, struct bio *bio)
 	LZ4E_PR_DEBUG("updated request stats");
 }
 
-void LZ4E_stats_reset(struct LZ4E_stats *lzstats)
+void lz4e_stats_reset(struct lz4e_stats *lzstats)
 {
 	memset(lzstats, 0, sizeof(*lzstats));
 
