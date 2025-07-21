@@ -1,0 +1,2 @@
+# Do not format lz4 library sources
+lz4e/*
