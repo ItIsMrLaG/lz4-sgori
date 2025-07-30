@@ -23,6 +23,7 @@
 #define LZ4E_ALIGN_16 __attribute__((packed, aligned(16)))
 #define LZ4E_ALIGN_32 __attribute__((packed, aligned(32)))
 #define LZ4E_ALIGN_64 __attribute__((packed, aligned(64)))
+#define LZ4E_ALIGN_128 __attribute__((packed, aligned(128)))
 
 // Print formatted error to logs
 #define LZ4E_PR_ERR(fmt, ...) \

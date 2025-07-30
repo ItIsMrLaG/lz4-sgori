@@ -15,17 +15,18 @@
 
 // Struct representing a contiguous data in memory
 struct lz4e_buffer {
+	struct bio *bio;
 	char *data;
 	int data_size;
 	int buf_size;
-} LZ4E_ALIGN_16;
+} LZ4E_ALIGN_32;
 
 // Struct representing data to be compressed
 struct lz4e_chunk {
 	struct lz4e_buffer src_buf;
 	struct lz4e_buffer dst_buf;
 	void *wrkmem;
-} LZ4E_ALIGN_64;
+} LZ4E_ALIGN_128;
 
 // Copy data from the given bio
 void lz4e_buf_copy_from_bio(struct lz4e_buffer *dst, struct bio *src);
@@ -38,6 +39,9 @@ int lz4e_chunk_compress(struct lz4e_chunk *chunk);
 
 // Decompress data from destination buffer into source buffer
 int lz4e_chunk_decompress(struct lz4e_chunk *chunk);
+
+// Compress data from src bio into dst bio using the extended algorithm
+int lz4e_chunk_compress_ext(struct lz4e_chunk *chunk);
 
 // Free chunk for compression
 void lz4e_chunk_free(struct lz4e_chunk *chunk);

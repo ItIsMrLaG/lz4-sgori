@@ -466,4 +466,3 @@ int LZ4E_decompress_safe(const char *source, char *dest,
 				      endOnInputSize, decode_full_block,
 				      noDict, (BYTE *)dest, NULL, 0);
 }
-
