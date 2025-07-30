@@ -34,6 +34,29 @@ void lz4e_buf_copy_from_bio(struct lz4e_buffer *dst, struct bio *src)
 	LZ4E_PR_DEBUG("copied from bio to src buffer");
 }
 
+void lz4e_buf_copy_to_bio(struct bio *original_bio, struct lz4e_buffer *dst) {
+    size_t offset = 0;
+    int iter = 0;
+
+    while (iter < original_bio->bi_vcnt && offset < dst->data_size) {
+        struct bio_vec *bvec = &original_bio->bi_io_vec[iter];
+        size_t copy_len = bvec->bv_len;
+
+        if (offset + copy_len > dst->data_size) {
+            copy_len = dst->data_size - offset;
+        }
+
+        void *dst_ptr = page_address(bvec->bv_page) + bvec->bv_offset;
+
+        memcpy(dst_ptr, &dst->data[offset], copy_len);
+
+        offset += copy_len;
+        iter++;
+    }
+
+ LZ4E_PR_DEBUG("copied from dst buffer to original_bio");
+}
+
 void lz4e_chunk_free(struct lz4e_chunk *chunk)
 {
 	if (!chunk)
