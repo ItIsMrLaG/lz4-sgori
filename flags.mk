@@ -1,7 +1,8 @@
 ccflags-y := \
 	-Wall \
-	-Wconversion \
+	-Wcast-align \
 	-Wformat \
+	-Wundef \
 	-Wuninitialized \
 	-Werror=format-security \
 	-Werror=implicit-function-declaration \
