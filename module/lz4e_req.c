@@ -62,13 +62,12 @@ static blk_status_t lz4e_read_req_init(struct lz4e_req *lzreq,
 	struct lz4e_stats *stats_to_update = lzdev->read_stats;
 	struct bio *new_bio;
 
-	new_bio = bio_alloc_clone(bdev, original_bio, GFP_NOIO, bset);
+	new_bio = bio_alloc(bdev, original_bio->bi_vcnt, REQ_OP_READ, GFP_NOIO);
 	if (!new_bio) {
-		LZ4E_PR_ERR("failed to clone original bio");
+		LZ4E_PR_ERR("failed to alloc new bio");
 		return BLK_STS_RESOURCE;
 	}
 
-	new_bio->bi_vcnt = original_bio->bi_vcnt;
 	lzreq->original_bio = original_bio;
 	lzreq->new_bio = new_bio;
 	lzreq->stats_to_update = stats_to_update;
