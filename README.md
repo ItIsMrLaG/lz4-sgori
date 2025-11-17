@@ -28,6 +28,15 @@ int LZ4E_compress_default(const struct bio_vec *src, struct bio_vec *dst,
 
 See [our docs](doc/API.md) for more details.
 
+## Requirements
+
+- Kernel version: 6.17.5
+
+Building the module also requires kernel headers to be present. In Ubuntu, for example, you can install them by running:
+```bash
+sudo apt-get install linux-headers-$(uname -r)
+```
+
 ## Installation
 
 1. Build the module:
