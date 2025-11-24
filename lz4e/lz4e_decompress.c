@@ -33,13 +33,14 @@
 /*-************************************
  *	Dependencies
  **************************************/
+#include <linux/export.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/unaligned.h>
 
-#include "include/lz4e/lz4e.h"
-#include "include/lz4e/lz4e_defs.h"
+#include "include/lz4e.h"
+#include "include/lz4e_defs.h"
 
 /*-*****************************
  *	Decompression functions
@@ -466,3 +467,8 @@ int LZ4E_decompress_safe(const char *source, char *dest,
 				      endOnInputSize, decode_full_block,
 				      noDict, (BYTE *)dest, NULL, 0);
 }
+EXPORT_SYMBOL(LZ4E_decompress_safe);
+
+MODULE_AUTHOR("");
+MODULE_DESCRIPTION("LZ4 decompression for scatter-gather buffers");
+MODULE_LICENSE("GPL");

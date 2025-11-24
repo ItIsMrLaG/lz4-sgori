@@ -3,8 +3,7 @@ source test/literals.sh
 set -euxo pipefail
 
 setup() {
-	make
-	insmod $MODULE_OBJ
+	make reinsert
 	modprobe brd rd_nr=1 rd_size=$DISK_SIZE_IN_KB max_part=0
 	echo -n $UNDERLYING_DEVICE > $DEVICE_MAPPER
 	mkdir $TEMP_DIR
@@ -39,7 +38,7 @@ test3() {
 cleanup() {
 	exit_code=$?
 	rm -rf $TEMP_DIR
-	rmmod $MODULE_NAME
+	make remove
 	rmmod brd
 	exit $exit_code
 }

@@ -1,3 +1,3 @@
 # Do not format lz4 library sources
 lz4e/*
-include/lz4e/*
+lz4e/include/*

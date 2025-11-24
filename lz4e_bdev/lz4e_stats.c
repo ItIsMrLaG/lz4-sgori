@@ -11,9 +11,9 @@
 #include <linux/slab.h>
 #include <linux/stddef.h>
 
-#include "include/module/lz4e_stats.h"
+#include "include/lz4e_stats.h"
 
-#include "include/module/lz4e_static.h"
+#include "include/lz4e_static.h"
 
 void lz4e_stats_free(struct lz4e_stats *lzstats)
 {

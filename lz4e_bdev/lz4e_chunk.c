@@ -11,10 +11,10 @@
 #include <linux/lz4.h>
 #include <linux/slab.h>
 
-#include "include/module/lz4e_chunk.h"
+#include "include/lz4e_chunk.h"
 
-#include "include/lz4e/lz4e.h"
-#include "include/module/lz4e_static.h"
+#include "include/lz4e.h"
+#include "include/lz4e_static.h"
 
 void lz4e_buf_copy_from_bio(struct lz4e_buffer *dst, struct bio *src)
 {

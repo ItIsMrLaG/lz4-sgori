@@ -13,11 +13,11 @@
 #include <linux/stddef.h>
 #include <linux/sysfs.h>
 
-#include "include/module/lz4e_module.h"
+#include "include/lz4e_module.h"
 
-#include "include/module/lz4e_dev.h"
-#include "include/module/lz4e_static.h"
-#include "include/module/lz4e_stats.h"
+#include "include/lz4e_dev.h"
+#include "include/lz4e_static.h"
+#include "include/lz4e_stats.h"
 
 static struct lz4e_module lzmod = {};
 
@@ -205,5 +205,5 @@ module_init(lz4e_module_init);
 module_exit(lz4e_module_exit);
 
 MODULE_AUTHOR("Alexander Bugaev");
-MODULE_DESCRIPTION("Proxy");
+MODULE_DESCRIPTION("Proxy block device for testing extended LZ4");
 MODULE_LICENSE("GPL");

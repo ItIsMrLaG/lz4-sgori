@@ -8,7 +8,7 @@ eliminating the need for additional data copying.
 - Kernel-space implementation of LZ4 with SG buffers support
 - Block device module for tests and experiments
 - Test environment for validation
-- API extension in `include/lz4e/lz4e.h`
+- API extension in `lz4e/include/lz4e.h`
 
 ## Extended API
 
@@ -26,51 +26,61 @@ int LZ4E_compress_default(const struct bio_vec *src, struct bio_vec *dst,
 		struct bvec_iter *srcIter, struct bvec_iter *dstIter, void *wrkmem);
 ```
 
-See [our docs](doc/API.md) for more details.
+See more details: [doc/API.md](doc/API.md).
 
 ## Requirements
 
 - Kernel version: 6.17.5
 
-Building the module also requires kernel headers to be present. In Ubuntu, for example, you can install them by running:
+Building the modules requires kernel headers to be present. In Ubuntu, for example, you can install them by running:
 ```bash
 sudo apt-get install linux-headers-$(uname -r)
 ```
 
+Using the block device also requires LZ4 kernel modules to be inserted into your kernel.
+You can insert them by running:
+```bash
+modprobe lz4 lz4_compress lz4_decompress
+```
+
 ## Installation
 
-1. Build the module:
+1. Build and insert extended compression with block device:
    ```bash
-   make build
+   make && make insert
    ```
 
-2. Insert the module into the kernel:
+2. Build and insert extended compression library only:
    ```bash
-   sudo insmod lz4e.ko
+   make lib && make lib_insert
    ```
 
-## Block-dev usage
+See more options: [doc/Usage.md](doc/Usage.md).
 
-1. Create a compressed block device:
+## Usage
+
+1. Use extended compression in your module: [doc/Usage.md#using-the-library](doc/Usage.md#using-the-library)
+
+2. Create a compressed block device:
    ```bash
-   echo -n "<path_to_underlying_device>" > /sys/module/lz4e/parameters/mapper
+   echo -n "<path_to_underlying_device>" > /sys/module/lz4e_bdev/parameters/mapper
    ```
 
-2. Remove the compressed block device:
+3. Remove the compressed block device:
    ```bash
-   echo -n "unmap" > /sys/module/lz4e/parameters/unmapper
+   echo -n "unmap" > /sys/module/lz4e_bdev/parameters/unmapper
    ```
 
 ## Testing
 
 Run the complete test suite with:
 ```bash
-test/test_all.sh
+make test
 ```
 
 Some tests use [fio](https://fio.readthedocs.io/en/latest/fio_doc.html) utility, so make sure it is installed.
 
 ## Implementation details
 
-Detailed implementation description can be found in the [documentation](doc/Compression.md).
+Detailed implementation description can be found at: [doc/Compression.md](doc/Compression.md).
 Essentially, we replace all uses of pointer arithmetic in favor of using `struct bio_vec` iterators to access and modify the data.

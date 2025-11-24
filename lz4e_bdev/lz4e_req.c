@@ -15,14 +15,14 @@
 #include <linux/slab.h>
 #include <linux/stddef.h>
 
-#include "include/module/lz4e_req.h"
+#include "include/lz4e_req.h"
 
-#include "include/lz4e/lz4e.h"
-#include "include/module/lz4e_chunk.h"
-#include "include/module/lz4e_dev.h"
-#include "include/module/lz4e_static.h"
-#include "include/module/lz4e_stats.h"
-#include "include/module/lz4e_under_dev.h"
+#include "include/lz4e.h"
+#include "include/lz4e_chunk.h"
+#include "include/lz4e_dev.h"
+#include "include/lz4e_static.h"
+#include "include/lz4e_stats.h"
+#include "include/lz4e_under_dev.h"
 
 void lz4e_req_free(struct lz4e_req *lzreq)
 {

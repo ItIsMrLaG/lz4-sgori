@@ -35,11 +35,12 @@
  **************************************/
 #include <linux/bio.h>
 #include <linux/bvec.h>
+#include <linux/export.h>
 #include <linux/module.h>
 #include <linux/kernel.h>
 
-#include "include/lz4e/lz4e.h"
-#include "include/lz4e/lz4e_defs.h"
+#include "include/lz4e.h"
+#include "include/lz4e_defs.h"
 
 /*-******************************
  *	Compression functions
@@ -565,3 +566,8 @@ int LZ4E_compress_default(const struct bio_vec *src, struct bio_vec *dst,
 	return LZ4E_compress_fast_extState(wrkmem, src, dst, srcIter,
 		dstIter, LZ4E_ACCELERATION_DEFAULT);
 }
+EXPORT_SYMBOL(LZ4E_compress_default);
+
+MODULE_AUTHOR("Alexander Bugaev");
+MODULE_DESCRIPTION("LZ4 compression for scatter-gather buffers");
+MODULE_LICENSE("GPL");
