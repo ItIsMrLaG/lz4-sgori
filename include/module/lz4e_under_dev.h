@@ -14,7 +14,7 @@
 
 #include "lz4e_static.h"
 
-// Struct representing a physical block device
+// Struct representing a physical block devices
 struct lz4e_under_dev {
 	struct block_device *bdev;
 	struct file *fbdev;
