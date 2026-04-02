@@ -411,15 +411,15 @@ def main():
     )
     parser.add_argument("--runs", default=5, type=int, help="Number of test runs")
     parser.add_argument("--acceleration", default=1, type=int, help="LZ4 acceleration factor")
-    parser.add_argument("--no-graphs", action="store_true", help="Skip graph generation")
+    parser.add_argument("--no-graph", action="store_true", help="Skip graph generation")
 
     args = parser.parse_args()
 
     # Override graph generation if requested
-    if args.no_graphs:
+    if args.no_graph:
         # Monkey patch the graph generation method
         def no_op(self):
-            print("Graph generation skipped (--no-graphs)")
+            print("Graph generation skipped (--no-graph)")
 
         LZ4Experiment._generate_graphs = no_op
 

@@ -146,13 +146,60 @@ test-fio:
 
 # ---------------- Experiments ----------------
 
+RUN_EXPERIMENT_ARGS :=
+GENERATE_GRAPHS_ARGS :=
+NO_GRAPH ?= false
+
+ifdef DATASET
+	RUN_EXPERIMENT_ARGS += --dataset $(DATASET)
+endif
+
+ifdef RESULT
+	RUN_EXPERIMENT_ARGS += --result $(RESULT)
+	GENERATE_GRAPHS_ARGS += --result $(RESULT)
+endif
+
+ifdef GRAPH
+	RUN_EXPERIMENT_ARGS += --graph $(GRAPH)
+	GENERATE_GRAPHS_ARGS += --graph $(GRAPH)
+endif
+
+ifdef UNDER_DEV
+	RUN_EXPERIMENT_ARGS += --under-dev $(UNDER_DEV)
+endif
+
+ifdef DEV_SIZE
+	RUN_EXPERIMENT_ARGS += --dev-size $(DEV_SIZE)
+endif
+
+ifdef BS
+	RUN_EXPERIMENT_ARGS += --bs $(BS)
+endif
+
+ifdef RUNS
+	RUN_EXPERIMENT_ARGS += --runs $(RUNS)
+endif
+
+ifdef ACCELERATION
+	RUN_EXPERIMENT_ARGS += --acceleration $(ACCELERATION)
+endif
+
+ifeq ($(NO_GRAPH),true)
+	RUN_EXPERIMENT_ARGS += --no-graph
+endif
+
+ifdef ARGS
+	RUN_EXPERIMENT_ARGS := $(ARGS)
+	GENERATE_GRAPHS_ARGS := $(ARGS)
+endif
+
 .PHONY: expt
 expt:
-	$(MAKE) && $(RUN_EXPERIMENT)
+	$(MAKE) && $(RUN_EXPERIMENT) $(RUN_EXPERIMENT_ARGS)
 
 .PHONY: expt-graph
 expt-graph:
-	$(GENERATE_GRAPHS)
+	$(GENERATE_GRAPHS) $(GENERATE_GRAPHS_ARGS)
 
 .PHONY: expt-clean
 expt-clean:
