@@ -26,7 +26,14 @@ TEST_ALL := ./$(TEST_DIR_NAME)/test_all.sh
 TEST_FAST := ./$(TEST_DIR_NAME)/bash_tests/test_all.sh
 TEST_FIO := ./$(TEST_DIR_NAME)/fio_tests/test_all.sh
 
-EXPERIMENT := ./$(EXPERIMENT_DIR_NAME)/run_experiment.py
+RUN_EXPERIMENT := ./$(EXPERIMENT_DIR_NAME)/run_experiment.py
+GENERATE_GRAPHS := ./$(EXPERIMENT_DIR_NAME)/generate_graphs.py
+
+EXPERIMENT_DIR := $(PWD)/$(EXPERIMENT_DIR_NAME)
+OUTPUT_EXPERIMENT := $(EXPERIMENT_DIR)/build \
+		     $(EXPERIMENT_DIR)/result \
+		     $(EXPERIMENT_DIR)/graph \
+		     $(EXPERIMENT_DIR)/*.egg-info
 
 CHECK_FORMAT := ./$(SCRIPTS_DIR_NAME)/check_with_clang_format.sh
 CHECK_TIDY := ./$(SCRIPTS_DIR_NAME)/check_with_clang_tidy.sh
@@ -137,11 +144,19 @@ test-fast:
 test-fio:
 	$(MAKE) && $(TEST_FIO)
 
-# ---------------- Running experiments ----------------
+# ---------------- Experiments ----------------
 
-.PHONY: experiment
-experiment:
-	$(MAKE) && $(EXPERIMENT)
+.PHONY: expt
+expt:
+	$(MAKE) && $(RUN_EXPERIMENT)
+
+.PHONY: expt-graph
+expt-graph:
+	$(GENERATE_GRAPHS)
+
+.PHONY: expt-clean
+expt-clean:
+	rm -rf $(OUTPUT_EXPERIMENT)
 
 # ---------------- Helper scripts ----------------
 

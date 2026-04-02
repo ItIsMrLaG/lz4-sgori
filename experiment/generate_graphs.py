@@ -1,4 +1,21 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Copyright (C) 2026 Alexander Bugaev
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; version 2 of the License.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+
 """
 Generate performance comparison graphs for LZ4 compression variations.
 """
@@ -13,54 +30,67 @@ from typing import Dict, List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 
+plt.switch_backend("svg")
+
+plt.rcParams.update(
+    {
+        "font.size": 10,
+        "axes.labelsize": 12,
+        "axes.titlesize": 13,
+        "axes.titleweight": "bold",
+        "legend.fontsize": 9,
+        "legend.frameon": False,
+        "lines.linewidth": 1,
+        "grid.linestyle": "--",
+        "grid.alpha": 0.3,
+    }
+)
+
 
 @dataclass
-class Metrics:
-    """Container for calculated metrics."""
+class IOMetrics:
+    """Container for I/O statistics (separate for read and write)."""
 
-    compression_ratio: float
-    compression_throughput: float  # MB/s
-    compression_with_copy_throughput: float  # MB/s
-    decompression_throughput: float  # MB/s
-    decompression_with_copy_throughput: float  # MB/s
-    total_throughput: float  # MB/s
+    reqs_total: int = 0
+    reqs_failed: int = 0
+    segments: int = 0
+    decomp_size: int = 0
+    comp_size: int = 0
+    copy_ns: int = 0
+    comp_ns: int = 0
+    decomp_ns: int = 0
+    total_ns: int = 0
 
 
 class GraphGenerator:
-    """Generate graphs comparing LZ4 compression variations."""
-
     COMPRESSION_TYPES = ["cont", "vect", "strm", "extd"]
     COMPRESSION_NAMES = {
-        "cont": "Continuous",
+        "cont": "Contiguous",
         "vect": "Vectorized",
         "strm": "Streaming",
         "extd": "Extended",
     }
+
+    COLORS = {"cont": "#1f77b4", "vect": "#ff7f0e", "strm": "#2ca02c", "extd": "#d62728"}
 
     def __init__(self, result_dir: Path, graph_dir: Path):
         self.result_dir = Path(result_dir)
         self.graph_dir = Path(graph_dir)
         self.graph_dir.mkdir(parents=True, exist_ok=True)
 
-    def load_results(self) -> Dict[str, Dict[str, List[Metrics]]]:
+    def load_results(self) -> Dict[str, Dict[str, List[Tuple[IOMetrics, IOMetrics]]]]:
         """
-        Load all results and organize by test file and compression type.
-        Returns: {test_file: {comp_type: [Metrics]}}
+        Load all results organized by test file and compression type.
+        Returns: {test_file: {comp_type: [(read_metrics, write_metrics)]}}
         """
         results = {}
 
         for comp_type in self.COMPRESSION_TYPES:
             comp_dir = self.result_dir / comp_type
             if not comp_dir.exists():
-                print(f"Warning: Directory {comp_dir} not found")
                 continue
 
-            json_files = list(comp_dir.glob("*.json"))
-            if not json_files:
-                print(f"Warning: No JSON files found in {comp_dir}")
-                continue
-
-            for json_file in json_files:
+            for json_file in comp_dir.glob("*.json"):
                 try:
                     with open(json_file) as f:
                         data = json.load(f)
@@ -69,91 +99,535 @@ class GraphGenerator:
                     if test_file not in results:
                         results[test_file] = {ct: [] for ct in self.COMPRESSION_TYPES}
 
-                    # Calculate metrics
                     stats = data["statistics"]
 
-                    # Use write statistics (for compression) and read statistics (for decompression)
-                    decomp_size = stats.get("stats_w_decomp_size", 0)
-                    comp_size = stats.get("stats_w_comp_size", 0)
-                    comp_ns = stats.get("stats_w_comp_ns", 1)  # Avoid division by zero
-                    decomp_ns = stats.get("stats_r_decomp_ns", 1)
-                    total_ns = stats.get("stats_r_total_ns", 1)
-                    copy_ns = stats.get("stats_r_copy_ns", 0) + stats.get("stats_w_copy_ns", 0)
-
-                    if decomp_size == 0 or comp_size == 0:
-                        print(f"Warning: Zero sizes in {json_file}, skipping...")
-                        continue
-
-                    # Calculate metrics
-                    compression_ratio = decomp_size / comp_size if comp_size > 0 else 0
-
-                    # Convert to MB/s (1 MB = 10^6 bytes, 1 ns = 10^-9 s)
-                    compression_throughput = (
-                        (decomp_size / 1e6) / (comp_ns / 1e9) if comp_ns > 0 else 0
-                    )
-                    compression_with_copy = (
-                        (decomp_size / 1e6) / ((copy_ns + comp_ns) / 1e9)
-                        if (copy_ns + comp_ns) > 0
-                        else 0
+                    # Read metrics
+                    read_metrics = IOMetrics(
+                        reqs_total=stats.get("stats_r_reqs_total", 0),
+                        reqs_failed=stats.get("stats_r_reqs_failed", 0),
+                        segments=stats.get("stats_r_segments", 0),
+                        decomp_size=stats.get("stats_r_decomp_size", 0),
+                        comp_size=stats.get("stats_r_comp_size", 0),
+                        copy_ns=stats.get("stats_r_copy_ns", 0),
+                        comp_ns=stats.get("stats_r_comp_ns", 0),
+                        decomp_ns=stats.get("stats_r_decomp_ns", 0),
+                        total_ns=stats.get("stats_r_total_ns", 0),
                     )
 
-                    decompression_throughput = (
-                        (comp_size / 1e6) / (decomp_ns / 1e9) if decomp_ns > 0 else 0
-                    )
-                    decompression_with_copy = (
-                        (comp_size / 1e6) / ((copy_ns + decomp_ns) / 1e9)
-                        if (copy_ns + decomp_ns) > 0
-                        else 0
-                    )
-
-                    total_throughput = (decomp_size / 1e6) / (total_ns / 1e9) if total_ns > 0 else 0
-
-                    metrics = Metrics(
-                        compression_ratio=compression_ratio,
-                        compression_throughput=compression_throughput,
-                        compression_with_copy_throughput=compression_with_copy,
-                        decompression_throughput=decompression_throughput,
-                        decompression_with_copy_throughput=decompression_with_copy,
-                        total_throughput=total_throughput,
+                    # Write metrics
+                    write_metrics = IOMetrics(
+                        reqs_total=stats.get("stats_w_reqs_total", 0),
+                        reqs_failed=stats.get("stats_w_reqs_failed", 0),
+                        segments=stats.get("stats_w_segments", 0),
+                        decomp_size=stats.get("stats_w_decomp_size", 0),
+                        comp_size=stats.get("stats_w_comp_size", 0),
+                        copy_ns=stats.get("stats_w_copy_ns", 0),
+                        comp_ns=stats.get("stats_w_comp_ns", 0),
+                        decomp_ns=stats.get("stats_w_decomp_ns", 0),
+                        total_ns=stats.get("stats_w_total_ns", 0),
                     )
 
-                    results[test_file][comp_type].append(metrics)
-
+                    results[test_file][comp_type].append((read_metrics, write_metrics))
                 except Exception as e:
                     print(f"Error processing {json_file}: {e}")
-                    continue
 
         return results
 
     def calculate_stats(self, values: List[float]) -> Tuple[float, float]:
-        """Calculate mean and standard deviation."""
         if not values:
             return 0, 0
         return statistics.mean(values), statistics.stdev(values) if len(values) > 1 else 0
 
-    def plot_metric(
-        self,
-        results: Dict,
-        metric_name: str,
-        ylabel: str,
-        title_prefix: str = "",
-        with_copy: bool = False,
-    ):
-        """Generate a bar chart for a specific metric."""
-        if not results:
-            print("No results to plot")
-            return
-
+    def plot_compression_ratio(self, results: Dict):
+        """Compression ratio = decomp_size / comp_size (from write metrics)"""
         test_files = list(results.keys())
         n_files = len(test_files)
         n_types = len(self.COMPRESSION_TYPES)
 
-        # Setup plot
-        _, ax = plt.subplots(figsize=(12, 6))
+        _, ax = plt.subplots(figsize=(16, 7))
         x = np.arange(n_files)
         width = 0.8 / n_types
 
-        colors = plt.cm.Set3(np.linspace(0, 1, n_types))
+        for idx, comp_type in enumerate(self.COMPRESSION_TYPES):
+            means, stds = [], []
+            for test_file in test_files:
+                metrics_list = results[test_file][comp_type]
+                if not metrics_list:
+                    means.append(0)
+                    stds.append(0)
+                    continue
+
+                ratios = []
+                for _, write_m in metrics_list:
+                    if write_m.comp_size > 0:
+                        ratio = write_m.decomp_size / write_m.comp_size
+                        ratios.append(ratio)
+
+                mean_val, std_val = self.calculate_stats(ratios)
+                means.append(mean_val)
+                stds.append(std_val)
+
+            pos = x + (idx - n_types / 2 + 0.5) * width
+            bars = ax.bar(
+                pos,
+                means,
+                width,
+                label=self.COMPRESSION_NAMES[comp_type],
+                color=self.COLORS[comp_type],
+                yerr=stds,
+                capsize=3,
+                alpha=0.8,
+                edgecolor="black",
+                linewidth=0.8,
+                error_kw={"elinewidth": 1, "capthick": 1},
+            )
+
+            max_height = max(means) if means else 1
+            for bar, mean_val, std_val in zip(bars, means, stds):
+                if mean_val > 0:
+                    ax.text(
+                        bar.get_x() + bar.get_width() / 2.0,
+                        bar.get_height() + std_val + max_height * 0.02,
+                        f"{mean_val:.1f}",
+                        ha="center",
+                        va="bottom",
+                        fontsize=8,
+                    )
+
+        ax.set_xlabel("Test Files", fontsize=12, fontweight="bold")
+        ax.set_ylabel("Compression Ratio", fontsize=12, fontweight="bold")
+        ax.set_title(
+            "Compression Ratio (Original Size / Compressed Size)", fontsize=13, fontweight="bold"
+        )
+        ax.set_xticks(x)
+        ax.set_xticklabels([Path(f).name for f in test_files], rotation=45, ha="right")
+        ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
+        ax.grid(True, alpha=0.3, axis="y", linestyle="--")
+        ax.set_axisbelow(True)
+
+        plt.tight_layout()
+        plt.savefig(self.graph_dir / "compression_ratio.svg", format="svg", bbox_inches="tight")
+        plt.close()
+        print("  Generated: compression_ratio.svg")
+
+    def plot_compression_throughput(self, results: Dict, operation: str):
+        """
+        Compression throughput = decomp_size / comp_ns
+        For both READ and WRITE operations (device compresses on every I/O)
+        """
+        test_files = list(results.keys())
+        n_files = len(test_files)
+        n_types = len(self.COMPRESSION_TYPES)
+
+        _, ax = plt.subplots(figsize=(16, 7))
+        x = np.arange(n_files)
+        width = 0.8 / n_types
+
+        for idx, comp_type in enumerate(self.COMPRESSION_TYPES):
+            base_throughputs = []  # Actual throughput (with copy time)
+            copy_overheads = []  # Throughput lost to copy time
+            base_stds = []
+
+            for test_file in test_files:
+                metrics_list = results[test_file][comp_type]
+                if not metrics_list:
+                    base_throughputs.append(0)
+                    copy_overheads.append(0)
+                    base_stds.append(0)
+                    continue
+
+                if operation == "read":
+                    # Use read metrics for compression during read
+                    values_actual = []
+                    values_ideal = []
+
+                    for read_m, _ in metrics_list:
+                        if read_m.comp_ns > 0 and read_m.decomp_size > 0:
+                            # Actual throughput (includes copy time)
+                            total_time = read_m.comp_ns + read_m.copy_ns
+                            tp_actual = (
+                                (read_m.decomp_size / 1e6) / (total_time / 1e9)
+                                if total_time > 0
+                                else 0
+                            )
+                            values_actual.append(tp_actual)
+
+                            # Ideal throughput (no copy time)
+                            tp_ideal = (read_m.decomp_size / 1e6) / (read_m.comp_ns / 1e9)
+                            values_ideal.append(tp_ideal)
+
+                    mean_actual, std_actual = self.calculate_stats(values_actual)
+                    mean_ideal, _ = self.calculate_stats(values_ideal)
+
+                    overhead = mean_ideal - mean_actual if mean_ideal > mean_actual else 0
+
+                    base_throughputs.append(mean_actual)
+                    copy_overheads.append(overhead)
+                    base_stds.append(std_actual)
+
+                elif operation == "write":
+                    # Use write metrics for compression during write
+                    values_actual = []
+                    values_ideal = []
+
+                    for _, write_m in metrics_list:
+                        if write_m.comp_ns > 0 and write_m.decomp_size > 0:
+                            total_time = write_m.comp_ns + write_m.copy_ns
+                            tp_actual = (
+                                (write_m.decomp_size / 1e6) / (total_time / 1e9)
+                                if total_time > 0
+                                else 0
+                            )
+                            values_actual.append(tp_actual)
+
+                            tp_ideal = (write_m.decomp_size / 1e6) / (write_m.comp_ns / 1e9)
+                            values_ideal.append(tp_ideal)
+
+                    mean_actual, std_actual = self.calculate_stats(values_actual)
+                    mean_ideal, _ = self.calculate_stats(values_ideal)
+
+                    overhead = mean_ideal - mean_actual if mean_ideal > mean_actual else 0
+
+                    base_throughputs.append(mean_actual)
+                    copy_overheads.append(overhead)
+                    base_stds.append(std_actual)
+
+                elif operation == "overall":
+                    # Combine read and write metrics for overall compression
+                    per_run_actual = []
+                    per_run_ideal = []
+
+                    for read_m, write_m in metrics_list:
+                        run_decomp = read_m.decomp_size + write_m.decomp_size
+                        run_comp_ns = read_m.comp_ns + write_m.comp_ns
+                        run_copy_ns = read_m.copy_ns + write_m.copy_ns
+
+                        if run_comp_ns > 0:
+                            # Actual throughput for this run (includes copy time)
+                            total_time = run_comp_ns + run_copy_ns
+                            tp_actual = (
+                                (run_decomp / 1e6) / (total_time / 1e9) if total_time > 0 else 0
+                            )
+                            per_run_actual.append(tp_actual)
+
+                            # Ideal throughput for this run (no copy time)
+                            tp_ideal = (run_decomp / 1e6) / (run_comp_ns / 1e9)
+                            per_run_ideal.append(tp_ideal)
+
+                    mean_actual, std_actual = self.calculate_stats(per_run_actual)
+                    mean_ideal, _ = self.calculate_stats(per_run_ideal)
+
+                    overhead = mean_ideal - mean_actual if mean_ideal > mean_actual else 0
+
+                    base_throughputs.append(mean_actual)
+                    copy_overheads.append(overhead)
+                    base_stds.append(std_actual)
+
+            pos = x + (idx - n_types / 2 + 0.5) * width
+            has_overhead = any(o > 0 for o in copy_overheads)
+
+            if has_overhead:
+                _ = ax.bar(
+                    pos,
+                    base_throughputs,
+                    width,
+                    label=f"{self.COMPRESSION_NAMES[comp_type]} (actual)",
+                    color=self.COLORS[comp_type],
+                    yerr=base_stds,
+                    capsize=3,
+                    alpha=0.75,
+                    edgecolor="black",
+                    linewidth=0.8,
+                    error_kw={"elinewidth": 1, "capthick": 1},
+                )
+
+                _ = ax.bar(
+                    pos,
+                    copy_overheads,
+                    width,
+                    bottom=base_throughputs,
+                    label=f"{self.COMPRESSION_NAMES[comp_type]} (copy loss)",
+                    color=self.COLORS[comp_type],
+                    alpha=0.3,
+                    edgecolor="none",
+                    linewidth=0,
+                )
+
+                # Label only the actual throughput value (bottom bar)
+                max_height = max(base_throughputs) if base_throughputs else 1
+                for i, (base, std) in enumerate(zip(base_throughputs, base_stds)):
+                    if base > 0:
+                        label_y = base + std + (max_height * 0.02)
+                        ax.text(
+                            pos[i], label_y, f"{base:.1f}", ha="center", va="bottom", fontsize=7
+                        )
+            else:
+                bars = ax.bar(
+                    pos,
+                    base_throughputs,
+                    width,
+                    label=self.COMPRESSION_NAMES[comp_type],
+                    color=self.COLORS[comp_type],
+                    yerr=base_stds,
+                    capsize=3,
+                    alpha=0.75,
+                    edgecolor="black",
+                    linewidth=0.8,
+                    error_kw={"elinewidth": 1, "capthick": 1},
+                )
+
+                max_height = max(base_throughputs) if base_throughputs else 1
+                for bar, val, std in zip(bars, base_throughputs, base_stds):
+                    if val > 0:
+                        ax.text(
+                            bar.get_x() + bar.get_width() / 2.0,
+                            bar.get_height() + std + max_height * 0.02,
+                            f"{val:.1f}",
+                            ha="center",
+                            va="bottom",
+                            fontsize=7,
+                        )
+
+        title_map = {
+            "read": "Compression Throughput (Read Operation)",
+            "write": "Compression Throughput (Write Operation)",
+            "overall": "Overall Compression Throughput (Read + Write)",
+        }
+
+        ax.set_xlabel("Test Files", fontsize=12, fontweight="bold")
+        ax.set_ylabel("Compression Throughput (MB/s)", fontsize=12, fontweight="bold")
+        ax.set_title(title_map[operation], fontsize=12, fontweight="bold")
+        ax.set_xticks(x)
+        ax.set_xticklabels([Path(f).name for f in test_files], rotation=45, ha="right")
+
+        handles, labels = ax.get_legend_handles_labels()
+        unique = dict(zip(labels, handles))
+        ax.legend(unique.values(), unique.keys(), loc="center left", bbox_to_anchor=(1.02, 0.5))
+
+        ax.grid(True, alpha=0.3, axis="y", linestyle="--")
+        ax.set_axisbelow(True)
+
+        plt.tight_layout()
+        output_path = self.graph_dir / f"compression_throughput_{operation}.svg"
+        plt.savefig(output_path, format="svg", bbox_inches="tight")
+        plt.close()
+        print(f"  Generated: compression_throughput_{operation}.svg")
+
+    def plot_decompression_throughput(self, results: Dict, operation: str):
+        """
+        Decompression throughput = comp_size / decomp_ns
+        For both READ and WRITE operations (device decompresses on every I/O)
+        """
+        test_files = list(results.keys())
+        n_files = len(test_files)
+        n_types = len(self.COMPRESSION_TYPES)
+
+        _, ax = plt.subplots(figsize=(16, 7))
+        x = np.arange(n_files)
+        width = 0.8 / n_types
+
+        for idx, comp_type in enumerate(self.COMPRESSION_TYPES):
+            base_throughputs = []  # Actual throughput (with copy time)
+            copy_overheads = []  # Throughput lost to copy time
+            base_stds = []
+
+            for test_file in test_files:
+                metrics_list = results[test_file][comp_type]
+                if not metrics_list:
+                    base_throughputs.append(0)
+                    copy_overheads.append(0)
+                    base_stds.append(0)
+                    continue
+
+                if operation == "read":
+                    # Use read metrics for decompression during read
+                    values_actual = []
+                    values_ideal = []
+
+                    for read_m, _ in metrics_list:
+                        if read_m.decomp_ns > 0 and read_m.comp_size > 0:
+                            total_time = read_m.decomp_ns + read_m.copy_ns
+                            tp_actual = (
+                                (read_m.comp_size / 1e6) / (total_time / 1e9)
+                                if total_time > 0
+                                else 0
+                            )
+                            values_actual.append(tp_actual)
+
+                            tp_ideal = (read_m.comp_size / 1e6) / (read_m.decomp_ns / 1e9)
+                            values_ideal.append(tp_ideal)
+
+                    mean_actual, std_actual = self.calculate_stats(values_actual)
+                    mean_ideal, _ = self.calculate_stats(values_ideal)
+
+                    overhead = mean_ideal - mean_actual if mean_ideal > mean_actual else 0
+
+                    base_throughputs.append(mean_actual)
+                    copy_overheads.append(overhead)
+                    base_stds.append(std_actual)
+
+                elif operation == "write":
+                    # Use write metrics for decompression during write
+                    values_actual = []
+                    values_ideal = []
+
+                    for _, write_m in metrics_list:
+                        if write_m.decomp_ns > 0 and write_m.comp_size > 0:
+                            total_time = write_m.decomp_ns + write_m.copy_ns
+                            tp_actual = (
+                                (write_m.comp_size / 1e6) / (total_time / 1e9)
+                                if total_time > 0
+                                else 0
+                            )
+                            values_actual.append(tp_actual)
+
+                            tp_ideal = (write_m.comp_size / 1e6) / (write_m.decomp_ns / 1e9)
+                            values_ideal.append(tp_ideal)
+
+                    mean_actual, std_actual = self.calculate_stats(values_actual)
+                    mean_ideal, _ = self.calculate_stats(values_ideal)
+
+                    overhead = mean_ideal - mean_actual if mean_ideal > mean_actual else 0
+
+                    base_throughputs.append(mean_actual)
+                    copy_overheads.append(overhead)
+                    base_stds.append(std_actual)
+
+                elif operation == "overall":
+                    # Combine read and write metrics for overall decompression
+                    per_run_actual = []
+                    per_run_ideal = []
+
+                    for read_m, write_m in metrics_list:
+                        run_comp = read_m.comp_size + write_m.comp_size
+                        run_decomp_ns = read_m.decomp_ns + write_m.decomp_ns
+                        run_copy_ns = read_m.copy_ns + write_m.copy_ns
+
+                        if run_decomp_ns > 0:
+                            # Actual throughput for this run (includes copy time)
+                            total_time = run_decomp_ns + run_copy_ns
+                            tp_actual = (
+                                (run_comp / 1e6) / (total_time / 1e9) if total_time > 0 else 0
+                            )
+                            per_run_actual.append(tp_actual)
+
+                            # Ideal throughput for this run (no copy time)
+                            tp_ideal = (run_comp / 1e6) / (run_decomp_ns / 1e9)
+                            per_run_ideal.append(tp_ideal)
+
+                    mean_actual, std_actual = self.calculate_stats(per_run_actual)
+                    mean_ideal, _ = self.calculate_stats(per_run_ideal)
+
+                    overhead = mean_ideal - mean_actual if mean_ideal > mean_actual else 0
+
+                    base_throughputs.append(mean_actual)
+                    copy_overheads.append(overhead)
+                    base_stds.append(std_actual)
+
+            pos = x + (idx - n_types / 2 + 0.5) * width
+            has_overhead = any(o > 0 for o in copy_overheads)
+
+            if has_overhead:
+                _ = ax.bar(
+                    pos,
+                    base_throughputs,
+                    width,
+                    label=f"{self.COMPRESSION_NAMES[comp_type]} (actual)",
+                    color=self.COLORS[comp_type],
+                    yerr=base_stds,
+                    capsize=3,
+                    alpha=0.75,
+                    edgecolor="black",
+                    linewidth=0.8,
+                    error_kw={"elinewidth": 1, "capthick": 1},
+                )
+
+                _ = ax.bar(
+                    pos,
+                    copy_overheads,
+                    width,
+                    bottom=base_throughputs,
+                    label=f"{self.COMPRESSION_NAMES[comp_type]} (copy loss)",
+                    color=self.COLORS[comp_type],
+                    alpha=0.3,
+                    edgecolor="none",
+                    linewidth=0,
+                )
+
+                # Label only the actual throughput value (bottom bar)
+                max_height = max(base_throughputs) if base_throughputs else 1
+                for i, (base, std) in enumerate(zip(base_throughputs, base_stds)):
+                    if base > 0:
+                        label_y = base + std + (max_height * 0.02)
+                        ax.text(
+                            pos[i], label_y, f"{base:.1f}", ha="center", va="bottom", fontsize=7
+                        )
+            else:
+                bars = ax.bar(
+                    pos,
+                    base_throughputs,
+                    width,
+                    label=self.COMPRESSION_NAMES[comp_type],
+                    color=self.COLORS[comp_type],
+                    yerr=base_stds,
+                    capsize=3,
+                    alpha=0.75,
+                    edgecolor="black",
+                    linewidth=0.8,
+                    error_kw={"elinewidth": 1, "capthick": 1},
+                )
+
+                max_height = max(base_throughputs) if base_throughputs else 1
+                for bar, val, std in zip(bars, base_throughputs, base_stds):
+                    if val > 0:
+                        ax.text(
+                            bar.get_x() + bar.get_width() / 2.0,
+                            bar.get_height() + std + max_height * 0.02,
+                            f"{val:.1f}",
+                            ha="center",
+                            va="bottom",
+                            fontsize=7,
+                        )
+
+        title_map = {
+            "read": "Decompression Throughput (Read Operation)",
+            "write": "Decompression Throughput (Write Operation)",
+            "overall": "Overall Decompression Throughput (Read + Write)",
+        }
+
+        ax.set_xlabel("Test Files", fontsize=12, fontweight="bold")
+        ax.set_ylabel("Decompression Throughput (MB/s)", fontsize=12, fontweight="bold")
+        ax.set_title(title_map[operation], fontsize=12, fontweight="bold")
+        ax.set_xticks(x)
+        ax.set_xticklabels([Path(f).name for f in test_files], rotation=45, ha="right")
+
+        handles, labels = ax.get_legend_handles_labels()
+        unique = dict(zip(labels, handles))
+        ax.legend(unique.values(), unique.keys(), loc="center left", bbox_to_anchor=(1.02, 0.5))
+
+        ax.grid(True, alpha=0.3, axis="y", linestyle="--")
+        ax.set_axisbelow(True)
+
+        plt.tight_layout()
+        output_path = self.graph_dir / f"decompression_throughput_{operation}.svg"
+        plt.savefig(output_path, format="svg", bbox_inches="tight")
+        plt.close()
+        print(f"  Generated: decompression_throughput_{operation}.svg")
+
+    def plot_total_throughput(self, results: Dict, operation: str):
+        """
+        Total throughput = decomp_size / total_ns
+        For READ: uses stats_r_total_ns and stats_r_decomp_size
+        For WRITE: uses stats_w_total_ns and stats_w_decomp_size
+        For OVERALL: combines both
+        """
+        test_files = list(results.keys())
+        n_files = len(test_files)
+        n_types = len(self.COMPRESSION_TYPES)
+
+        _, ax = plt.subplots(figsize=(16, 7))
+        x = np.arange(n_files)
+        width = 0.8 / n_types
 
         for idx, comp_type in enumerate(self.COMPRESSION_TYPES):
             means = []
@@ -166,153 +640,164 @@ class GraphGenerator:
                     stds.append(0)
                     continue
 
-                if metric_name == "compression_ratio":
-                    values = [m.compression_ratio for m in metrics_list]
-                elif metric_name == "compression_throughput":
-                    values = [m.compression_throughput for m in metrics_list]
-                elif metric_name == "compression_with_copy":
-                    values = [m.compression_with_copy_throughput for m in metrics_list]
-                elif metric_name == "decompression_throughput":
-                    values = [m.decompression_throughput for m in metrics_list]
-                elif metric_name == "decompression_with_copy":
-                    values = [m.decompression_with_copy_throughput for m in metrics_list]
-                elif metric_name == "total_throughput":
-                    values = [m.total_throughput for m in metrics_list]
-                else:
+                if operation == "read":
+                    # Total throughput for read operations
                     values = []
+                    for read_m, _ in metrics_list:
+                        if read_m.total_ns > 0 and read_m.decomp_size > 0:
+                            tp = (read_m.decomp_size / 1e6) / (read_m.total_ns / 1e9)
+                            values.append(tp)
+                    mean_val, std_val = self.calculate_stats(values)
+                    means.append(mean_val)
+                    stds.append(std_val)
 
-                mean_val, std_val = self.calculate_stats(values)
-                means.append(mean_val)
-                stds.append(std_val)
+                elif operation == "write":
+                    # Total throughput for write operations
+                    values = []
+                    for _, write_m in metrics_list:
+                        if write_m.total_ns > 0 and write_m.decomp_size > 0:
+                            tp = (write_m.decomp_size / 1e6) / (write_m.total_ns / 1e9)
+                            values.append(tp)
+                    mean_val, std_val = self.calculate_stats(values)
+                    means.append(mean_val)
+                    stds.append(std_val)
 
-            # Calculate position for bars
+                elif operation == "overall":
+                    # Overall total throughput (combine read and write)
+                    total_decomp = 0
+                    total_time = 0
+                    per_run_tp = []
+
+                    for read_m, write_m in metrics_list:
+                        run_decomp = read_m.decomp_size + write_m.decomp_size
+                        run_time = read_m.total_ns + write_m.total_ns
+
+                        if run_time > 0:
+                            run_tp = (run_decomp / 1e6) / (run_time / 1e9)
+                            per_run_tp.append(run_tp)
+
+                            total_decomp += run_decomp
+                            total_time += run_time
+
+                    if total_time > 0:
+                        overall_tp = (total_decomp / 1e6) / (total_time / 1e9)
+                        _, std_val = self.calculate_stats(per_run_tp)
+                        means.append(overall_tp)
+                        stds.append(std_val)
+                    else:
+                        means.append(0)
+                        stds.append(0)
+
             pos = x + (idx - n_types / 2 + 0.5) * width
-            _ = ax.bar(
+            bars = ax.bar(
                 pos,
                 means,
                 width,
                 label=self.COMPRESSION_NAMES[comp_type],
-                color=colors[idx],
+                color=self.COLORS[comp_type],
                 yerr=stds,
                 capsize=3,
-                alpha=0.8,
+                alpha=0.75,
+                edgecolor="black",
+                linewidth=0.8,
+                error_kw={"elinewidth": 1, "capthick": 1},
             )
 
-        # Customize plot
-        ax.set_xlabel("Test Files", fontsize=12)
-        ax.set_ylabel(ylabel, fontsize=12)
+            max_height = max(means) if means else 1
+            for bar, mean_val, std_val in zip(bars, means, stds):
+                if mean_val > 0:
+                    ax.text(
+                        bar.get_x() + bar.get_width() / 2.0,
+                        bar.get_height() + std_val + max_height * 0.02,
+                        f"{mean_val:.1f}",
+                        ha="center",
+                        va="bottom",
+                        fontsize=7,
+                    )
 
-        title = f"{title_prefix} {metric_name.replace('_', ' ').title()}"
-        if with_copy:
-            title += " (with copy time)"
-        ax.set_title(title, fontsize=14, fontweight="bold")
+        title_map = {
+            "read": "Total Throughput (Read Operation)",
+            "write": "Total Throughput (Write Operation)",
+            "overall": "Overall Total Throughput (Read + Write)",
+        }
 
+        subtitle = "\n(Includes compression, decompression, copy, and device I/O)"
+
+        ax.set_xlabel("Test Files", fontsize=12, fontweight="bold")
+        ax.set_ylabel("Total Throughput (MB/s)", fontsize=12, fontweight="bold")
+        ax.set_title(title_map[operation] + subtitle, fontsize=11, fontweight="bold")
         ax.set_xticks(x)
-        # Use just filename without path
-        short_names = [Path(f).name for f in test_files]
-        ax.set_xticklabels(short_names, rotation=45, ha="right")
-        ax.legend(loc="upper right", bbox_to_anchor=(1.15, 1))
+        ax.set_xticklabels([Path(f).name for f in test_files], rotation=45, ha="right")
+        ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
+        ax.grid(True, alpha=0.3, axis="y", linestyle="--")
+        ax.set_axisbelow(True)
 
-        ax.grid(True, alpha=0.3, axis="y")
-
-        # Adjust layout
         plt.tight_layout()
-
-        # Save figure
-        filename = f"{metric_name}"
-        if with_copy:
-            filename += "_with_copy"
-        output_path = self.graph_dir / f"{filename}.png"
-        plt.savefig(output_path, dpi=300, bbox_inches="tight")
+        output_path = self.graph_dir / f"total_throughput_{operation}.svg"
+        plt.savefig(output_path, format="svg", bbox_inches="tight")
         plt.close()
-
-        print(f"Generated graph: {output_path}")
+        print(f"  Generated: total_throughput_{operation}.svg")
 
     def generate_all_graphs(self):
-        """Generate all comparison graphs."""
+        """Generate all 10 requested graphs."""
         print("Loading results...")
         results = self.load_results()
 
         if not results:
-            print("No results found to generate graphs")
+            print("No results found")
             return
 
-        print(f"Found {len(results)} test files with results")
-        for test_file, comp_results in results.items():
-            total_measurements = sum(len(v) for v in comp_results.values())
-            print(f"  - {Path(test_file).name}: {total_measurements} measurements")
+        print(f"Found {len(results)} test files with results\n")
 
-        # Generate graphs for each metric
-        graphs_config = [
-            ("compression_ratio", "Compression Ratio", "Compression Efficiency"),
-            (
-                "compression_throughput",
-                "Compression Throughput (MB/s)",
-                "Compression Performance",
-            ),
-            (
-                "decompression_throughput",
-                "Decompression Throughput (MB/s)",
-                "Decompression Performance",
-            ),
-            ("total_throughput", "Total Throughput (MB/s)", "Overall Performance"),
-        ]
+        print("Generating graphs:")
 
-        for metric, ylabel, title_prefix in graphs_config:
-            self.plot_metric(results, metric, ylabel, title_prefix)
+        # 1. Compression ratio
+        print("  1/10: Compression ratio")
+        self.plot_compression_ratio(results)
 
-        # Generate graphs with copy time included
-        copy_graphs_config = [
-            (
-                "compression_throughput",
-                "Compression Throughput (MB/s)",
-                "Compression Performance",
-                True,
-            ),
-            (
-                "decompression_throughput",
-                "Decompression Throughput (MB/s)",
-                "Decompression Performance",
-                True,
-            ),
-        ]
+        # 2-4. Compression throughput (for read, write, and overall)
+        print("  2/10: Compression throughput (read)")
+        self.plot_compression_throughput(results, "read")
 
-        for metric, ylabel, title_prefix, with_copy in copy_graphs_config:
-            metric_with_copy = f"{metric.split('_')[0]}_with_copy"
-            self.plot_metric(results, metric_with_copy, ylabel, title_prefix, with_copy)
+        print("  3/10: Compression throughput (write)")
+        self.plot_compression_throughput(results, "write")
 
-        print(f"\nAll graphs saved to {self.graph_dir}")
+        print("  4/10: Compression throughput (overall)")
+        self.plot_compression_throughput(results, "overall")
 
-        # Print summary statistics
-        print("\n" + "=" * 60)
-        print("SUMMARY STATISTICS")
-        print("=" * 60)
-        for test_file in results:
-            print(f"\nTest File: {Path(test_file).name}")
-            for comp_type in self.COMPRESSION_TYPES:
-                metrics_list = results[test_file][comp_type]
-                if metrics_list:
-                    avg_ratio = statistics.mean([m.compression_ratio for m in metrics_list])
-                    avg_comp = statistics.mean([m.compression_throughput for m in metrics_list])
-                    avg_decomp = statistics.mean([m.decompression_throughput for m in metrics_list])
-                    print(f"  {self.COMPRESSION_NAMES[comp_type]}:")
-                    print(
-                        f"    Ratio: {avg_ratio:.2f}x, Comp: {avg_comp:.2f} MB/s, Decomp: {avg_decomp:.2f} MB/s"
-                    )
+        # 5-7. Decompression throughput (for read, write, and overall)
+        print("  5/10: Decompression throughput (read)")
+        self.plot_decompression_throughput(results, "read")
+
+        print("  6/10: Decompression throughput (write)")
+        self.plot_decompression_throughput(results, "write")
+
+        print("  7/10: Decompression throughput (overall)")
+        self.plot_decompression_throughput(results, "overall")
+
+        # 8-10. Total throughput (for read, write, and overall)
+        print("  8/10: Total throughput (read)")
+        self.plot_total_throughput(results, "read")
+
+        print("  9/10: Total throughput (write)")
+        self.plot_total_throughput(results, "write")
+
+        print(" 10/10: Total throughput (overall)")
+        self.plot_total_throughput(results, "overall")
+
+        print(f"\nAll graphs saved to: {self.graph_dir}")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Generate LZ4 comparison graphs")
     parser.add_argument(
-        "--result",
-        default="./experiment/result",
-        help="Path to intermediate results directory",
+        "--result", default="./experiment/result", help="Path to intermediate results directory"
     )
     parser.add_argument("--graph", default="./experiment/graph", help="Path to graph directory")
 
     args = parser.parse_args()
 
-    generator = GraphGenerator(args.result, args.graph)
+    generator = GraphGenerator(Path(args.result), Path(args.graph))
     generator.generate_all_graphs()
 
 
