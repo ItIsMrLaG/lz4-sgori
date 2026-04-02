@@ -19,11 +19,14 @@ DECOMPRESS_OBJ := $(OUTPUT_LIB)/$(DECOMPRESS_NAME).ko
 BDEV_OBJ := $(OUTPUT_BDEV)/$(BDEV_NAME).ko
 
 TEST_DIR_NAME := test
+EXPERIMENT_DIR_NAME := experiment
 SCRIPTS_DIR_NAME := scripts
 
 TEST_ALL := ./$(TEST_DIR_NAME)/test_all.sh
 TEST_FAST := ./$(TEST_DIR_NAME)/bash_tests/test_all.sh
 TEST_FIO := ./$(TEST_DIR_NAME)/fio_tests/test_all.sh
+
+EXPERIMENT := ./$(EXPERIMENT_DIR_NAME)/run_experiment.py
 
 CHECK_FORMAT := ./$(SCRIPTS_DIR_NAME)/check_with_clang_format.sh
 CHECK_TIDY := ./$(SCRIPTS_DIR_NAME)/check_with_clang_tidy.sh
@@ -133,6 +136,12 @@ test-fast:
 .PHONY: test-fio
 test-fio:
 	$(MAKE) && $(TEST_FIO)
+
+# ---------------- Running experiments ----------------
+
+.PHONY: experiment
+experiment:
+	$(MAKE) && $(EXPERIMENT)
 
 # ---------------- Helper scripts ----------------
 
