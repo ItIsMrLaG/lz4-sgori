@@ -157,3 +157,20 @@ To run the complete test suite, which consists of basic functionality tests as w
 [fio](https://fio.readthedocs.io/en/latest/fio_doc.html) utility, run `make test`.
 
 To run a faster and simpler suite for the block device, use `make test-fast`. You can also run only the `fio` tests with `make test-fio`.
+
+## Running the experiment
+
+To run the experiment with default options, run:
+```bash
+make expt
+```
+To generate graphs from intermediate results using default options, run:
+```bash
+make expt-graph
+```
+To clean any experiment output, run:
+```bash
+make expt-clean
+```
+
+See more options at: [Experiment.md#usage](Experiment.md#usage).

@@ -97,12 +97,10 @@ To run the experiment with default options, run:
 ```bash
 make expt
 ```
-
 To generate graphs from intermediate results using default options, run:
 ```bash
 make expt-graph
 ```
-
 To clean any experiment output, run:
 ```bash
 make expt-clean
