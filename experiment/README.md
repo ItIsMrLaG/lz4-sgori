@@ -1,1 +1,2 @@
-See [doc/Experiment.md](../doc/Experiment.md)
+- About the experiment: [doc/Experiment.md](../doc/Experiment.md)
+- How to use: [doc/Usage.md#running-the-experiment](../doc/Usage.md#running-the-experiment)
