@@ -78,39 +78,4 @@ the script will try generating graphs, comparing metrics of said compression typ
 
 ## Usage
 
-Options for `run_experiment.py`:
-- `--dataset` — path to the dataset directory, default: `experiment/dataset`;
-- `--result` — path to intermediate results directory, default: `experiment/result`;
-- `--graph` — path to generated graphs directory, default: `experiment/graph`;
-- `--under-dev` — path to the underlying device, over which to create proxy, default: `None`, but create block RAM disk with `brd`;
-- `--dev-size` — size in KB of block RAM device to create, in case `--under-dev` is `None`, default: `1048576`, or 1GB;
-- `--bs` — block size in IEC format to use with `dd`, default: `1M`;
-- `--runs` — number of test runs to make for each file and each compression type, default: `5`;
-- `--acceleration` — acceleration factor to use with LZ4, default: `1`;
-- `--no-graph` — whether to skip graph generation, default: `false`.
-
-Options for `generate_graphs.py`:
-- `--result` — path to intermediate results directory, default: `experiment/result`;
-- `--graph` — path to generated graphs directory, default: `experiment/graph`.
-
-To run the experiment with default options, run:
-```bash
-make expt
-```
-To generate graphs from intermediate results using default options, run:
-```bash
-make expt-graph
-```
-To clean any experiment output, run:
-```bash
-make expt-clean
-```
-
-Using command line options with `make` is also supported. You can pass options using the `ARGS` variable, for example:
-```bash
-make expt ARGS="--bs 64k --runs 10 --no-graph"
-```
-Instead of using `ARGS`, you can set individual options using their respective variable as well:
-```bash
-make expt DATASET="./my_data" BS="4M" NO_GRAPH="true"
-```
+See [Usage.md#running-the-experiment](Usage.md#running-the-experiment).

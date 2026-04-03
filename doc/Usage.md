@@ -154,13 +154,37 @@ For example, to print read and write stats, run `make stats-pprint ARGS="-rw"`.
 ## Testing
 
 To run the complete test suite, which consists of basic functionality tests as well as more complex ones using
-[fio](https://fio.readthedocs.io/en/latest/fio_doc.html) utility, run `make test`.
-
-To run a faster and simpler suite for the block device, use `make test-fast`. You can also run only the `fio` tests with `make test-fio`.
+[fio](https://fio.readthedocs.io/en/latest/fio_doc.html) utility, run:
+```bash
+make test
+```
+To run a faster and simpler suite for the block device, use:
+```bash
+make test-fast
+```
+You can also run only the `fio` tests with:
+```bash
+make test-fio
+```
 
 ## Running the experiment
 
-To run the experiment with default options, run:
+Options for `run_experiment.py`:
+- `--dataset` — path to the dataset directory, default: `experiment/dataset`;
+- `--result` — path to intermediate results directory, default: `experiment/result`;
+- `--graph` — path to generated graphs directory, default: `experiment/graph`;
+- `--under-dev` — path to the underlying device, over which to create proxy, default: `None`, but create block RAM disk with `brd`;
+- `--dev-size` — size in KB of block RAM device to create, in case `--under-dev` is `None`, default: `1048576`, or 1GB;
+- `--bs` — block size in IEC format to use with `dd`, default: `1M`;
+- `--runs` — number of test runs to make for each file and each compression type, default: `5`;
+- `--acceleration` — acceleration factor to use with LZ4, default: `1`;
+- `--no-graph` — whether to skip graph generation, default: `false`.
+
+Options for `generate_graphs.py`:
+- `--result` — path to intermediate results directory, default: `experiment/result`;
+- `--graph` — path to generated graphs directory, default: `experiment/graph`.
+
+To run the experiment with default options, use:
 ```bash
 make expt
 ```
@@ -173,4 +197,11 @@ To clean any experiment output, run:
 make expt-clean
 ```
 
-See more options at: [Experiment.md#usage](Experiment.md#usage).
+Using command line options with `make` is also supported. You can pass options using the `ARGS` variable, for example:
+```bash
+make expt ARGS="--bs 64k --runs 10 --no-graph"
+```
+Instead of using `ARGS`, you can set individual options using their respective variable as well:
+```bash
+make expt DATASET="./my_data" BS="4M" NO_GRAPH="true"
+```
