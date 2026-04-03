@@ -221,3 +221,6 @@ dataset/*
 # Experiments output
 result
 graph
+
+# Temporary directory for output
+tmp

@@ -22,7 +22,9 @@ Experimental environment for comparing LZ4 compression variations in Linux kerne
 
 import argparse
 import json
+import math
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -41,9 +43,13 @@ class LZ4Stats:
     # Read statistics
     stats_r_reqs_total: int = 0
     stats_r_reqs_failed: int = 0
+    stats_r_min_vec: int = 0
+    stats_r_max_vec: int = 0
+    stats_r_vecs: int = 0
     stats_r_segments: int = 0
     stats_r_decomp_size: int = 0
     stats_r_comp_size: int = 0
+    stats_r_mem_usage: int = 0
     stats_r_copy_ns: int = 0
     stats_r_comp_ns: int = 0
     stats_r_decomp_ns: int = 0
@@ -52,9 +58,13 @@ class LZ4Stats:
     # Write statistics
     stats_w_reqs_total: int = 0
     stats_w_reqs_failed: int = 0
+    stats_w_min_vec: int = 0
+    stats_w_max_vec: int = 0
+    stats_w_vecs: int = 0
     stats_w_segments: int = 0
     stats_w_decomp_size: int = 0
     stats_w_comp_size: int = 0
+    stats_w_mem_usage: int = 0
     stats_w_copy_ns: int = 0
     stats_w_comp_ns: int = 0
     stats_w_decomp_ns: int = 0
@@ -91,8 +101,7 @@ class LZ4Experiment:
         self.bs_bytes = self._parse_bs(args.bs)
         self.proxy_dev = Path("/dev/lz4e0")
         self.under_dev = args.under_dev
-        self.tmp_dir = Path("./tmp")
-        self.tmp_dir.mkdir(exist_ok=True)
+        self.tmp_dir = Path("./experiment/tmp")
 
         # Create result and graph directories
         self.result_dir = Path(args.result)
@@ -133,19 +142,20 @@ class LZ4Experiment:
                 check=True,
             )
             self.under_dev = "/dev/ram0"
-            time.sleep(1)  # Wait for device to be created
+            time.sleep(0.001)
         return self.under_dev
 
     def _load_modules(self):
         """Load required kernel modules."""
         print("Loading lz4e_bdev module...")
         subprocess.run(["make", "reinsert"], cwd=".", check=True)
-        time.sleep(1)  # Wait for module to initialize
+        time.sleep(0.001)
 
     def _unload_modules(self):
         """Unload kernel modules."""
         print("Unloading modules...")
         subprocess.run(["make", "remove"], cwd=".", check=True)
+        time.sleep(0.001)
 
     def _create_proxy_device(self, under_dev: str):
         """Create proxy device over underlying device."""
@@ -153,7 +163,7 @@ class LZ4Experiment:
         sysfs_param = Path("/sys/module/lz4e_bdev/parameters/mapper")
         with open(sysfs_param, "w") as f:
             f.write(under_dev)
-        time.sleep(1)  # Wait for device to be created
+        time.sleep(0.001)
 
         if not self.proxy_dev.exists():
             raise RuntimeError(f"Proxy device {self.proxy_dev} not created")
@@ -164,29 +174,32 @@ class LZ4Experiment:
         sysfs_param = Path("/sys/module/lz4e_bdev/parameters/unmapper")
         with open(sysfs_param, "w") as f:
             f.write("lz4e0")
-        time.sleep(1)
+        time.sleep(0.001)
 
     def _set_compression_type(self, comp_type: str):
         """Set compression type."""
         sysfs_param = Path("/sys/module/lz4e_bdev/parameters/comp_type")
         with open(sysfs_param, "w") as f:
             f.write(comp_type)
+        time.sleep(0.001)
 
     def _set_acceleration(self, accel: int):
         """Set acceleration factor."""
         sysfs_param = Path("/sys/module/lz4e_bdev/parameters/acceleration")
         with open(sysfs_param, "w") as f:
             f.write(str(accel))
+        time.sleep(0.001)
 
     def _reset_stats(self):
         """Reset I/O statistics."""
         sysfs_param = Path("/sys/module/lz4e_bdev/parameters/stats_reset")
         with open(sysfs_param, "w") as f:
             f.write("1")
+        time.sleep(0.001)
 
     def _get_count(self, file_size: int) -> int:
         """Calculate count parameter for dd."""
-        return (file_size // self.bs_bytes) + 1
+        return math.ceil(file_size / self.bs_bytes)
 
     def _run_dd_write(self, input_file: Path, count: int) -> bool:
         """Run dd write operation."""
@@ -196,6 +209,7 @@ class LZ4Experiment:
             f"of={self.proxy_dev}",
             f"bs={self.args.bs}",
             f"count={count}",
+            "iflag=fullblock",
             "oflag=direct",
             "status=none",
         ]
@@ -210,7 +224,7 @@ class LZ4Experiment:
             f"of={output_file}",
             f"bs={self.args.bs}",
             f"count={count}",
-            "iflag=direct",
+            "iflag=direct,fullblock",
             "status=none",
         ]
         result = subprocess.run(cmd, capture_output=True)
@@ -258,6 +272,11 @@ class LZ4Experiment:
 
         print(f"  Saved intermediate results to {result_file}")
 
+    def _cleanup_tmp_dir(self):
+        """Remove temporary directory and all its contents."""
+        if self.tmp_dir.exists():
+            shutil.rmtree(self.tmp_dir, ignore_errors=True)
+
     def run_single_test(self, test_file: Path, comp_type: str, run_num: int):
         """Run a single test for a specific file and compression type."""
         file_size = test_file.stat().st_size
@@ -301,7 +320,7 @@ class LZ4Experiment:
             try:
                 stats = LZ4Stats.from_sysfs()
                 self._save_intermediate_results(test_file, comp_type, run_num, stats)
-            except e:
+            except Exception:
                 pass
             raise
 
@@ -338,42 +357,55 @@ class LZ4Experiment:
         experiment_success = False
 
         try:
+            # Create temporary directory for test files
+            self.tmp_dir.mkdir(exist_ok=True)
+
             # Setup environment
             under_dev = self._setup_under_device()
             self._load_modules()
             self._create_proxy_device(under_dev)
 
-            # Get all test files
+            # Get test files
             test_files = self._get_test_files()
             print(f"\nFound {len(test_files)} test files in dataset")
 
             # Run experiments
             for test_file in test_files:
-                print(f"\nProcessing test file: {test_file}")
-                file_size = test_file.stat().st_size
-                print(f"  File size: {file_size} bytes")
+                print(f"\n{'=' * 60}")
+                print(f"Processing test file: {test_file}")
+                print(f"{'=' * 60}")
 
                 for comp_type in self.COMPRESSION_TYPES:
                     print(f"\n  Testing compression type: {comp_type}")
 
                     for run_num in range(1, self.args.runs + 1):
-                        print(f"    Run {run_num}/{self.args.runs}")
+                        print(f"\n    Run {run_num}/{self.args.runs}")
                         self.run_single_test(test_file, comp_type, run_num)
 
             experiment_success = True
             print("\nExperiment completed successfully!")
 
+        except KeyboardInterrupt:
+            print("\n\nExperiment interrupted by user")
+            experiment_success = False
         except Exception as e:
             print(f"\nExperiment failed: {e}")
             import traceback
 
             traceback.print_exc()
+            experiment_success = False
 
         finally:
-            # Always try to generate graphs from available data
-            self._generate_graphs()
+            # Generate graphs if requested
+            if not self.args.no_graph and experiment_success:
+                self._generate_graphs()
+            elif not self.args.no_graph:
+                print("\nGraph generation skipped due to experiment failure")
+            else:
+                print("Graph generation skipped (--no-graph)")
 
-            # Cleanup
+            # Cleanup: remove proxy device and unload modules
+            print("\nCleaning up kernel modules...")
             try:
                 self._remove_proxy_device()
             except Exception as e:
@@ -383,6 +415,9 @@ class LZ4Experiment:
                 self._unload_modules()
             except Exception as e:
                 print(f"Warning: Could not unload modules: {e}")
+
+            # Always cleanup temporary directory on exit
+            self._cleanup_tmp_dir()
 
         if not experiment_success:
             sys.exit(1)
@@ -414,14 +449,6 @@ def main():
     parser.add_argument("--no-graph", action="store_true", help="Skip graph generation")
 
     args = parser.parse_args()
-
-    # Override graph generation if requested
-    if args.no_graph:
-        # Monkey patch the graph generation method
-        def no_op(self):
-            print("Graph generation skipped (--no-graph)")
-
-        LZ4Experiment._generate_graphs = no_op
 
     experiment = LZ4Experiment(args)
     experiment.run_experiment()

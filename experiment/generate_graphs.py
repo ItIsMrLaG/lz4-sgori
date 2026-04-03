@@ -53,9 +53,13 @@ class IOMetrics:
 
     reqs_total: int = 0
     reqs_failed: int = 0
+    min_vec: int = 0
+    max_vec: int = 0
+    vecs: int = 0
     segments: int = 0
     decomp_size: int = 0
     comp_size: int = 0
+    mem_usage: int = 0
     copy_ns: int = 0
     comp_ns: int = 0
     decomp_ns: int = 0
@@ -105,9 +109,13 @@ class GraphGenerator:
                     read_metrics = IOMetrics(
                         reqs_total=stats.get("stats_r_reqs_total", 0),
                         reqs_failed=stats.get("stats_r_reqs_failed", 0),
+                        min_vec=stats.get("stats_r_min_vec", 0),
+                        max_vec=stats.get("stats_r_max_vec", 0),
+                        vecs=stats.get("stats_r_vecs", 0),
                         segments=stats.get("stats_r_segments", 0),
                         decomp_size=stats.get("stats_r_decomp_size", 0),
                         comp_size=stats.get("stats_r_comp_size", 0),
+                        mem_usage=stats.get("stats_r_mem_usage", 0),
                         copy_ns=stats.get("stats_r_copy_ns", 0),
                         comp_ns=stats.get("stats_r_comp_ns", 0),
                         decomp_ns=stats.get("stats_r_decomp_ns", 0),
@@ -118,9 +126,13 @@ class GraphGenerator:
                     write_metrics = IOMetrics(
                         reqs_total=stats.get("stats_w_reqs_total", 0),
                         reqs_failed=stats.get("stats_w_reqs_failed", 0),
+                        min_vec=stats.get("stats_w_min_vec", 0),
+                        max_vec=stats.get("stats_w_max_vec", 0),
+                        vecs=stats.get("stats_w_vecs", 0),
                         segments=stats.get("stats_w_segments", 0),
                         decomp_size=stats.get("stats_w_decomp_size", 0),
                         comp_size=stats.get("stats_w_comp_size", 0),
+                        mem_usage=stats.get("stats_w_mem_usage", 0),
                         copy_ns=stats.get("stats_w_copy_ns", 0),
                         comp_ns=stats.get("stats_w_comp_ns", 0),
                         decomp_ns=stats.get("stats_w_decomp_ns", 0),
@@ -139,7 +151,10 @@ class GraphGenerator:
         return statistics.mean(values), statistics.stdev(values) if len(values) > 1 else 0
 
     def plot_compression_ratio(self, results: Dict):
-        """Compression ratio = decomp_size / comp_size (from write metrics)"""
+        """
+        Compression ratio = decomp_size / comp_size
+        Uses overall metrics (sum of read and write)
+        """
         test_files = list(results.keys())
         n_files = len(test_files)
         n_types = len(self.COMPRESSION_TYPES)
@@ -158,9 +173,11 @@ class GraphGenerator:
                     continue
 
                 ratios = []
-                for _, write_m in metrics_list:
-                    if write_m.comp_size > 0:
-                        ratio = write_m.decomp_size / write_m.comp_size
+                for read_m, write_m in metrics_list:
+                    total_decomp = read_m.decomp_size + write_m.decomp_size
+                    total_comp = read_m.comp_size + write_m.comp_size
+                    if total_comp > 0:
+                        ratio = total_decomp / total_comp
                         ratios.append(ratio)
 
                 mean_val, std_val = self.calculate_stats(ratios)
@@ -197,7 +214,9 @@ class GraphGenerator:
         ax.set_xlabel("Test Files", fontsize=12, fontweight="bold")
         ax.set_ylabel("Compression Ratio", fontsize=12, fontweight="bold")
         ax.set_title(
-            "Compression Ratio (Original Size / Compressed Size)", fontsize=13, fontweight="bold"
+            "Compression Ratio (Original Size / Compressed Size)",
+            fontsize=13,
+            fontweight="bold",
         )
         ax.set_xticks(x)
         ax.set_xticklabels([Path(f).name for f in test_files], rotation=45, ha="right")
@@ -209,6 +228,104 @@ class GraphGenerator:
         plt.savefig(self.graph_dir / "compression_ratio.svg", format="svg", bbox_inches="tight")
         plt.close()
         print("  Generated: compression_ratio.svg")
+
+    def plot_memory_usage(self, results: Dict, operation: str):
+        """
+        Average memory usage per successful request = mem_usage / (reqs_total - reqs_failed)
+        For READ: uses read metrics
+        For WRITE: uses write metrics
+        For OVERALL: uses combined metrics
+        """
+        test_files = list(results.keys())
+        n_files = len(test_files)
+        n_types = len(self.COMPRESSION_TYPES)
+
+        _, ax = plt.subplots(figsize=(16, 7))
+        x = np.arange(n_files)
+        width = 0.8 / n_types
+
+        for idx, comp_type in enumerate(self.COMPRESSION_TYPES):
+            means, stds = [], []
+
+            for test_file in test_files:
+                metrics_list = results[test_file][comp_type]
+                if not metrics_list:
+                    means.append(0)
+                    stds.append(0)
+                    continue
+
+                mem_per_req = []
+                for read_m, write_m in metrics_list:
+                    if operation == "read":
+                        successful_reqs = read_m.reqs_total - read_m.reqs_failed
+                        if successful_reqs > 0 and read_m.mem_usage > 0:
+                            mem = read_m.mem_usage / successful_reqs
+                            mem_per_req.append(mem / 1024)  # Convert to KB
+                    elif operation == "write":
+                        successful_reqs = write_m.reqs_total - write_m.reqs_failed
+                        if successful_reqs > 0 and write_m.mem_usage > 0:
+                            mem = write_m.mem_usage / successful_reqs
+                            mem_per_req.append(mem / 1024)  # Convert to KB
+                    else:  # overall
+                        total_mem = read_m.mem_usage + write_m.mem_usage
+                        total_reqs = read_m.reqs_total + write_m.reqs_total
+                        total_failed = read_m.reqs_failed + write_m.reqs_failed
+                        successful_reqs = total_reqs - total_failed
+                        if successful_reqs > 0 and total_mem > 0:
+                            mem = total_mem / successful_reqs
+                            mem_per_req.append(mem / 1024)  # Convert to KB
+
+                mean_val, std_val = self.calculate_stats(mem_per_req)
+                means.append(mean_val)
+                stds.append(std_val)
+
+            pos = x + (idx - n_types / 2 + 0.5) * width
+            bars = ax.bar(
+                pos,
+                means,
+                width,
+                label=self.COMPRESSION_NAMES[comp_type],
+                color=self.COLORS[comp_type],
+                yerr=stds,
+                capsize=3,
+                alpha=0.75,
+                edgecolor="black",
+                linewidth=0.8,
+                error_kw={"elinewidth": 1, "capthick": 1},
+            )
+
+            max_height = max(means) if means else 1
+            for bar, mean_val, std_val in zip(bars, means, stds):
+                if mean_val > 0:
+                    ax.text(
+                        bar.get_x() + bar.get_width() / 2.0,
+                        bar.get_height() + std_val + max_height * 0.02,
+                        f"{mean_val:.1f}",
+                        ha="center",
+                        va="bottom",
+                        fontsize=7,
+                    )
+
+        title_map = {
+            "read": "Memory Usage (Read Operation)",
+            "write": "Memory Usage (Write Operation)",
+            "overall": "Memory Usage (Read + Write)",
+        }
+
+        ax.set_xlabel("Test Files", fontsize=12, fontweight="bold")
+        ax.set_ylabel("Average Memory Usage per Request (KB)", fontsize=12, fontweight="bold")
+        ax.set_title(title_map[operation], fontsize=12, fontweight="bold")
+        ax.set_xticks(x)
+        ax.set_xticklabels([Path(f).name for f in test_files], rotation=45, ha="right")
+        ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
+        ax.grid(True, alpha=0.3, axis="y", linestyle="--")
+        ax.set_axisbelow(True)
+
+        plt.tight_layout()
+        output_path = self.graph_dir / f"memory_usage_{operation}.svg"
+        plt.savefig(output_path, format="svg", bbox_inches="tight")
+        plt.close()
+        print(f"  Generated: memory_usage_{operation}.svg")
 
     def plot_compression_throughput(self, results: Dict, operation: str):
         """
@@ -739,7 +856,7 @@ class GraphGenerator:
         print(f"  Generated: total_throughput_{operation}.svg")
 
     def generate_all_graphs(self):
-        """Generate all 10 requested graphs."""
+        """Generate all graphs."""
         print("Loading results...")
         results = self.load_results()
 
@@ -751,38 +868,48 @@ class GraphGenerator:
 
         print("Generating graphs:")
 
-        # 1. Compression ratio
-        print("  1/10: Compression ratio")
+        # 1. Compression ratio (overall only)
+        print("  1/13: Compression ratio (overall)")
         self.plot_compression_ratio(results)
 
-        # 2-4. Compression throughput (for read, write, and overall)
-        print("  2/10: Compression throughput (read)")
+        # 2-4. Memory usage (for read, write, and overall)
+        print("  2/13: Memory usage (read)")
+        self.plot_memory_usage(results, "read")
+
+        print("  3/13: Memory usage (write)")
+        self.plot_memory_usage(results, "write")
+
+        print("  4/13: Memory usage (overall)")
+        self.plot_memory_usage(results, "overall")
+
+        # 5-7. Compression throughput (for read, write, and overall)
+        print("  5/13: Compression throughput (read)")
         self.plot_compression_throughput(results, "read")
 
-        print("  3/10: Compression throughput (write)")
+        print("  6/13: Compression throughput (write)")
         self.plot_compression_throughput(results, "write")
 
-        print("  4/10: Compression throughput (overall)")
+        print("  7/13: Compression throughput (overall)")
         self.plot_compression_throughput(results, "overall")
 
-        # 5-7. Decompression throughput (for read, write, and overall)
-        print("  5/10: Decompression throughput (read)")
+        # 8-10. Decompression throughput (for read, write, and overall)
+        print("  8/13: Decompression throughput (read)")
         self.plot_decompression_throughput(results, "read")
 
-        print("  6/10: Decompression throughput (write)")
+        print("  9/13: Decompression throughput (write)")
         self.plot_decompression_throughput(results, "write")
 
-        print("  7/10: Decompression throughput (overall)")
+        print(" 10/13: Decompression throughput (overall)")
         self.plot_decompression_throughput(results, "overall")
 
-        # 8-10. Total throughput (for read, write, and overall)
-        print("  8/10: Total throughput (read)")
+        # 11-13. Total throughput (for read, write, and overall)
+        print(" 11/13: Total throughput (read)")
         self.plot_total_throughput(results, "read")
 
-        print("  9/10: Total throughput (write)")
+        print(" 12/13: Total throughput (write)")
         self.plot_total_throughput(results, "write")
 
-        print(" 10/10: Total throughput (overall)")
+        print(" 13/13: Total throughput (overall)")
         self.plot_total_throughput(results, "overall")
 
         print(f"\nAll graphs saved to: {self.graph_dir}")
