@@ -23,4 +23,5 @@ and comparing it to the standard implementation in the block layer setting.
 - [API](API.md) — standard and extended LZ4 interface description;
 - [BlockFormat](BlockFormat.md) — LZ4 block format description, independent of implementation;
 - [Compression](Compression.md) — standard LZ4 compression algorithm, implementation details for the extended version;
+- [Experiment](Experiment.md) — experiment comparing performances of different LZ4 variations in the kernel block layer;
 - [Usage](Usage.md) — a guide on using the modified LZ4, as well as the proxy block device.
