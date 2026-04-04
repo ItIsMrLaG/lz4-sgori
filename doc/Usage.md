@@ -170,9 +170,9 @@ make test-fio
 ## Running the experiment
 
 Options for `run_experiment.py`:
-- `--dataset` — path to the dataset directory. Default: `./dataset`
-- `--result` — path to intermediate results directory. Default: `./result`
-- `--graph` — path to generated graphs directory. Default: `./graph`
+- `--dataset` — path to the dataset directory. Default: `./experiment/dataset`
+- `--result` — path to intermediate results directory. Default: `./experiment/result`
+- `--graph` — path to generated graphs directory. Default: `./experiment/graph`
 - `--under-dev` — path to the underlying device, over which to create proxy. Default: `None`, but create block RAM disk with `brd`
 - `--dev-size` — size in KB of block RAM device to create, in case `--under-dev` is `None`. Default: `1048576`, or 1GB
 - `--bs` — block size in IEC format to use with `dd`. Default: `1M`
@@ -181,8 +181,8 @@ Options for `run_experiment.py`:
 - `--no-graph` — whether to skip graph generation. Default: `false`
 
 Options for `generate_graphs.py`:
-- `--result` — path to intermediate results directory. Default: `./result`
-- `--graph` — path to generated graphs directory. Default: `./graph`
+- `--result` — path to intermediate results directory. Default: `./experiment/result`
+- `--graph` — path to generated graphs directory. Default: `./experiment/graph`
 
 To run the experiment with default options, use:
 ```bash

@@ -101,7 +101,7 @@ class LZ4Experiment:
         self.bs_bytes = self._parse_bs(args.bs)
         self.proxy_dev = Path("/dev/lz4e0")
         self.under_dev = args.under_dev
-        self.tmp_dir = Path("./tmp")
+        self.tmp_dir = Path("./experiment/tmp")
 
         # Create result and graph directories
         self.result_dir = Path(args.result)
@@ -148,13 +148,13 @@ class LZ4Experiment:
     def _load_modules(self) -> None:
         """Load required kernel modules."""
         print("Loading lz4e_bdev module...")
-        run(["make", "reinsert"], cwd="..", check=True)
+        run(["make", "reinsert"], cwd=".", check=True)
         sleep(0.001)
 
     def _unload_modules(self) -> None:
         """Unload kernel modules."""
         print("Unloading modules...")
-        run(["make", "remove"], cwd="..", check=True)
+        run(["make", "remove"], cwd=".", check=True)
         sleep(0.001)
 
     def _create_proxy_device(self, under_dev: str) -> None:
@@ -426,13 +426,15 @@ class LZ4Experiment:
 def main() -> None:
     parser = ArgumentParser(description="LZ4 Compression Experiment")
     parser.add_argument("--bs", default="1M", help="Block size (IEC format)")
-    parser.add_argument("--dataset", default="./dataset", help="Path to dataset directory")
+    parser.add_argument(
+        "--dataset", default="./experiment/dataset", help="Path to dataset directory"
+    )
     parser.add_argument(
         "--result",
-        default="./result",
+        default="./experiment/result",
         help="Path to intermediate results directory",
     )
-    parser.add_argument("--graph", default="./graph", help="Path to graph directory")
+    parser.add_argument("--graph", default="./experiment/graph", help="Path to graph directory")
     parser.add_argument(
         "--under-dev", default="None", help="Underlying device (or None for RAM device)"
     )

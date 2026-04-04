@@ -918,9 +918,9 @@ class GraphGenerator:
 def main() -> None:
     parser = ArgumentParser(description="Generate LZ4 comparison graphs")
     parser.add_argument(
-        "--result", default="./result", help="Path to intermediate results directory"
+        "--result", default="./experiment/result", help="Path to intermediate results directory"
     )
-    parser.add_argument("--graph", default="./graph", help="Path to graph directory")
+    parser.add_argument("--graph", default="./experiment/graph", help="Path to graph directory")
 
     args = parser.parse_args()
 
