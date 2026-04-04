@@ -20,18 +20,18 @@
 Experimental environment for comparing LZ4 compression variations in Linux kernel.
 """
 
-import argparse
-import json
-import math
-import os
-import shutil
-import subprocess
-import sys
-import tempfile
-import time
+from argparse import ArgumentParser, Namespace
 from dataclasses import asdict, dataclass
+from json import dump
+from math import ceil
+from os import walk
 from pathlib import Path
-from typing import Dict, List
+from shutil import rmtree
+from subprocess import CalledProcessError, run
+from sys import exit
+from tempfile import NamedTemporaryFile
+from time import sleep
+from typing import Any, Dict, List, Union
 
 from generate_graphs import GraphGenerator
 
@@ -71,7 +71,7 @@ class LZ4Stats:
     stats_w_total_ns: int = 0
 
     @classmethod
-    def from_sysfs(cls, base_path: Path = Path("/sys/module/lz4e_bdev/parameters")):
+    def from_sysfs(cls, base_path: Path = Path("/sys/module/lz4e_bdev/parameters")) -> "LZ4Stats":
         """Read statistics from sysfs."""
         stats = cls()
         for field in cls.__dataclass_fields__:
@@ -96,12 +96,12 @@ class LZ4Experiment:
     COMPRESSION_TYPES = ["cont", "vect", "strm", "extd"]
     IGNORE_FILES = [".gitkeep"]
 
-    def __init__(self, args):
+    def __init__(self, args: Namespace) -> None:
         self.args = args
         self.bs_bytes = self._parse_bs(args.bs)
         self.proxy_dev = Path("/dev/lz4e0")
         self.under_dev = args.under_dev
-        self.tmp_dir = Path("./experiment/tmp")
+        self.tmp_dir = Path("./tmp")
 
         # Create result and graph directories
         self.result_dir = Path(args.result)
@@ -118,88 +118,88 @@ class LZ4Experiment:
         """Parse block size from IEC format to bytes."""
         try:
             # Use numfmt utility for conversion
-            result = subprocess.run(
+            result = run(
                 ["numfmt", "--from=iec", bs_str],
                 capture_output=True,
                 text=True,
                 check=True,
             )
             return int(result.stdout.strip())
-        except subprocess.CalledProcessError:
+        except CalledProcessError:
             # Fallback to manual parsing
             multipliers = {"K": 1024, "M": 1024**2, "G": 1024**3}
             if bs_str[-1] in multipliers:
                 return int(bs_str[:-1]) * multipliers[bs_str[-1]]
             return int(bs_str)
 
-    def _setup_under_device(self):
+    def _setup_under_device(self) -> Union[Any, str]:
         """Setup underlying device if not provided."""
         if self.under_dev == "None" or self.under_dev is None:
             dev_size_kb = self.args.dev_size
             print(f"Creating RAM device of size {dev_size_kb} KB...")
-            subprocess.run(
+            run(
                 ["modprobe", "brd", "rd_nr=1", f"rd_size={dev_size_kb}", "max_part=0"],
                 check=True,
             )
             self.under_dev = "/dev/ram0"
-            time.sleep(0.001)
+            sleep(0.001)
         return self.under_dev
 
-    def _load_modules(self):
+    def _load_modules(self) -> None:
         """Load required kernel modules."""
         print("Loading lz4e_bdev module...")
-        subprocess.run(["make", "reinsert"], cwd=".", check=True)
-        time.sleep(0.001)
+        run(["make", "reinsert"], cwd="..", check=True)
+        sleep(0.001)
 
-    def _unload_modules(self):
+    def _unload_modules(self) -> None:
         """Unload kernel modules."""
         print("Unloading modules...")
-        subprocess.run(["make", "remove"], cwd=".", check=True)
-        time.sleep(0.001)
+        run(["make", "remove"], cwd="..", check=True)
+        sleep(0.001)
 
-    def _create_proxy_device(self, under_dev: str):
+    def _create_proxy_device(self, under_dev: str) -> None:
         """Create proxy device over underlying device."""
         print(f"Creating proxy device over {under_dev}...")
         sysfs_param = Path("/sys/module/lz4e_bdev/parameters/mapper")
         with open(sysfs_param, "w") as f:
             f.write(under_dev)
-        time.sleep(0.001)
+        sleep(0.001)
 
         if not self.proxy_dev.exists():
             raise RuntimeError(f"Proxy device {self.proxy_dev} not created")
 
-    def _remove_proxy_device(self):
+    def _remove_proxy_device(self) -> None:
         """Remove proxy device."""
         print("Removing proxy device...")
         sysfs_param = Path("/sys/module/lz4e_bdev/parameters/unmapper")
         with open(sysfs_param, "w") as f:
             f.write("lz4e0")
-        time.sleep(0.001)
+        sleep(0.001)
 
-    def _set_compression_type(self, comp_type: str):
+    def _set_compression_type(self, comp_type: str) -> None:
         """Set compression type."""
         sysfs_param = Path("/sys/module/lz4e_bdev/parameters/comp_type")
         with open(sysfs_param, "w") as f:
             f.write(comp_type)
-        time.sleep(0.001)
+        sleep(0.001)
 
-    def _set_acceleration(self, accel: int):
+    def _set_acceleration(self, accel: int) -> None:
         """Set acceleration factor."""
         sysfs_param = Path("/sys/module/lz4e_bdev/parameters/acceleration")
         with open(sysfs_param, "w") as f:
             f.write(str(accel))
-        time.sleep(0.001)
+        sleep(0.001)
 
-    def _reset_stats(self):
+    def _reset_stats(self) -> None:
         """Reset I/O statistics."""
         sysfs_param = Path("/sys/module/lz4e_bdev/parameters/stats_reset")
         with open(sysfs_param, "w") as f:
             f.write("1")
-        time.sleep(0.001)
+        sleep(0.001)
 
     def _get_count(self, file_size: int) -> int:
         """Calculate count parameter for dd."""
-        return math.ceil(file_size / self.bs_bytes)
+        return ceil(file_size / self.bs_bytes)
 
     def _run_dd_write(self, input_file: Path, count: int) -> bool:
         """Run dd write operation."""
@@ -213,7 +213,7 @@ class LZ4Experiment:
             "oflag=direct",
             "status=none",
         ]
-        result = subprocess.run(cmd, capture_output=True)
+        result = run(cmd, capture_output=True)
         return result.returncode == 0
 
     def _run_dd_read(self, output_file: Path, count: int) -> bool:
@@ -227,7 +227,7 @@ class LZ4Experiment:
             "iflag=direct,fullblock",
             "status=none",
         ]
-        result = subprocess.run(cmd, capture_output=True)
+        result = run(cmd, capture_output=True)
         return result.returncode == 0
 
     def _verify_integrity(self, original: Path, test: Path, size: int) -> bool:
@@ -238,7 +238,7 @@ class LZ4Experiment:
     def _get_test_files(self) -> List[Path]:
         """Recursively find all test files in dataset directory."""
         test_files = []
-        for root, _, files in os.walk(self.dataset_dir):
+        for root, _, files in walk(self.dataset_dir):
             for file in files:
                 if file not in self.IGNORE_FILES:
                     test_files.append(Path(root) / file)
@@ -246,7 +246,7 @@ class LZ4Experiment:
 
     def _save_intermediate_results(
         self, test_file: Path, comp_type: str, run_num: int, stats: LZ4Stats
-    ):
+    ) -> None:
         """Save intermediate results to JSON file."""
         # Create directory structure
         comp_dir = self.result_dir / comp_type
@@ -268,22 +268,22 @@ class LZ4Experiment:
 
         # Save to JSON
         with open(result_file, "w") as f:
-            json.dump(result_data, f, indent=2)
+            dump(result_data, f, indent=2)
 
         print(f"  Saved intermediate results to {result_file}")
 
-    def _cleanup_tmp_dir(self):
+    def _cleanup_tmp_dir(self) -> None:
         """Remove temporary directory and all its contents."""
         if self.tmp_dir.exists():
-            shutil.rmtree(self.tmp_dir, ignore_errors=True)
+            rmtree(self.tmp_dir, ignore_errors=True)
 
-    def run_single_test(self, test_file: Path, comp_type: str, run_num: int):
+    def run_single_test(self, test_file: Path, comp_type: str, run_num: int) -> None:
         """Run a single test for a specific file and compression type."""
         file_size = test_file.stat().st_size
         count = self._get_count(file_size)
 
         # Create temporary output file
-        with tempfile.NamedTemporaryFile(dir=self.tmp_dir, delete=False) as tmp:
+        with NamedTemporaryFile(dir=self.tmp_dir, delete=False) as tmp:
             tmp_output = Path(tmp.name)
 
         try:
@@ -330,7 +330,7 @@ class LZ4Experiment:
                 tmp_output.unlink()
             self._reset_stats()
 
-    def _generate_graphs(self):
+    def _generate_graphs(self) -> None:
         """Generate graphs using imported GraphGenerator."""
         print("\n" + "=" * 60)
         print("Generating performance graphs...")
@@ -352,7 +352,7 @@ class LZ4Experiment:
 
             traceback.print_exc()
 
-    def run_experiment(self):
+    def run_experiment(self) -> None:
         """Run the complete experiment."""
         experiment_success = False
 
@@ -420,21 +420,19 @@ class LZ4Experiment:
             self._cleanup_tmp_dir()
 
         if not experiment_success:
-            sys.exit(1)
+            exit(1)
 
 
-def main():
-    parser = argparse.ArgumentParser(description="LZ4 Compression Experiment")
+def main() -> None:
+    parser = ArgumentParser(description="LZ4 Compression Experiment")
     parser.add_argument("--bs", default="1M", help="Block size (IEC format)")
-    parser.add_argument(
-        "--dataset", default="./experiment/dataset", help="Path to dataset directory"
-    )
+    parser.add_argument("--dataset", default="./dataset", help="Path to dataset directory")
     parser.add_argument(
         "--result",
-        default="./experiment/result",
+        default="./result",
         help="Path to intermediate results directory",
     )
-    parser.add_argument("--graph", default="./experiment/graph", help="Path to graph directory")
+    parser.add_argument("--graph", default="./graph", help="Path to graph directory")
     parser.add_argument(
         "--under-dev", default="None", help="Underlying device (or None for RAM device)"
     )

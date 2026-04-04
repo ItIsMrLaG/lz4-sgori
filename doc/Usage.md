@@ -170,19 +170,19 @@ make test-fio
 ## Running the experiment
 
 Options for `run_experiment.py`:
-- `--dataset` — path to the dataset directory, default: `experiment/dataset`;
-- `--result` — path to intermediate results directory, default: `experiment/result`;
-- `--graph` — path to generated graphs directory, default: `experiment/graph`;
-- `--under-dev` — path to the underlying device, over which to create proxy, default: `None`, but create block RAM disk with `brd`;
-- `--dev-size` — size in KB of block RAM device to create, in case `--under-dev` is `None`, default: `1048576`, or 1GB;
-- `--bs` — block size in IEC format to use with `dd`, default: `1M`;
-- `--runs` — number of test runs to make for each file and each compression type, default: `5`;
-- `--acceleration` — acceleration factor to use with LZ4, default: `1`;
-- `--no-graph` — whether to skip graph generation, default: `false`.
+- `--dataset` — path to the dataset directory. Default: `./dataset`
+- `--result` — path to intermediate results directory. Default: `./result`
+- `--graph` — path to generated graphs directory. Default: `./graph`
+- `--under-dev` — path to the underlying device, over which to create proxy. Default: `None`, but create block RAM disk with `brd`
+- `--dev-size` — size in KB of block RAM device to create, in case `--under-dev` is `None`. Default: `1048576`, or 1GB
+- `--bs` — block size in IEC format to use with `dd`. Default: `1M`
+- `--runs` — number of test runs to make for each file and each compression type. Default: `5`
+- `--acceleration` — acceleration factor to use with LZ4. Default: `1`
+- `--no-graph` — whether to skip graph generation. Default: `false`
 
 Options for `generate_graphs.py`:
-- `--result` — path to intermediate results directory, default: `experiment/result`;
-- `--graph` — path to generated graphs directory, default: `experiment/graph`.
+- `--result` — path to intermediate results directory. Default: `./result`
+- `--graph` — path to generated graphs directory. Default: `./graph`
 
 To run the experiment with default options, use:
 ```bash

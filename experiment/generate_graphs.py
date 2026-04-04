@@ -20,15 +20,15 @@
 Generate performance comparison graphs for LZ4 compression variations.
 """
 
-import argparse
-import json
-import statistics
+from argparse import ArgumentParser
 from dataclasses import dataclass
+from json import load
 from pathlib import Path
+from statistics import mean, stdev
 from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
-import numpy as np
+from numpy import arange
 
 plt.switch_backend("svg")
 
@@ -87,7 +87,7 @@ class GraphGenerator:
         Load all results organized by test file and compression type.
         Returns: {test_file: {comp_type: [(read_metrics, write_metrics)]}}
         """
-        results = {}
+        results: Dict[str, Dict[str, List[Tuple[IOMetrics, IOMetrics]]]] = {}
 
         for comp_type in self.COMPRESSION_TYPES:
             comp_dir = self.result_dir / comp_type
@@ -97,7 +97,7 @@ class GraphGenerator:
             for json_file in comp_dir.glob("*.json"):
                 try:
                     with open(json_file) as f:
-                        data = json.load(f)
+                        data = load(f)
 
                     test_file = data["test_file"]
                     if test_file not in results:
@@ -148,9 +148,9 @@ class GraphGenerator:
     def calculate_stats(self, values: List[float]) -> Tuple[float, float]:
         if not values:
             return 0, 0
-        return statistics.mean(values), statistics.stdev(values) if len(values) > 1 else 0
+        return mean(values), stdev(values) if len(values) > 1 else 0
 
-    def plot_compression_ratio(self, results: Dict):
+    def plot_compression_ratio(self, results: Dict) -> None:
         """
         Compression ratio = decomp_size / comp_size
         Uses overall metrics (sum of read and write)
@@ -160,7 +160,7 @@ class GraphGenerator:
         n_types = len(self.COMPRESSION_TYPES)
 
         _, ax = plt.subplots(figsize=(16, 7))
-        x = np.arange(n_files)
+        x = arange(n_files)
         width = 0.8 / n_types
 
         for idx, comp_type in enumerate(self.COMPRESSION_TYPES):
@@ -168,8 +168,8 @@ class GraphGenerator:
             for test_file in test_files:
                 metrics_list = results[test_file][comp_type]
                 if not metrics_list:
-                    means.append(0)
-                    stds.append(0)
+                    means.append(0.0)
+                    stds.append(0.0)
                     continue
 
                 ratios = []
@@ -229,7 +229,7 @@ class GraphGenerator:
         plt.close()
         print("  Generated: compression_ratio.svg")
 
-    def plot_memory_usage(self, results: Dict, operation: str):
+    def plot_memory_usage(self, results: Dict, operation: str) -> None:
         """
         Average memory usage per successful request = mem_usage / (reqs_total - reqs_failed)
         For READ: uses read metrics
@@ -241,7 +241,7 @@ class GraphGenerator:
         n_types = len(self.COMPRESSION_TYPES)
 
         _, ax = plt.subplots(figsize=(16, 7))
-        x = np.arange(n_files)
+        x = arange(n_files)
         width = 0.8 / n_types
 
         for idx, comp_type in enumerate(self.COMPRESSION_TYPES):
@@ -250,8 +250,8 @@ class GraphGenerator:
             for test_file in test_files:
                 metrics_list = results[test_file][comp_type]
                 if not metrics_list:
-                    means.append(0)
-                    stds.append(0)
+                    means.append(0.0)
+                    stds.append(0.0)
                     continue
 
                 mem_per_req = []
@@ -327,7 +327,7 @@ class GraphGenerator:
         plt.close()
         print(f"  Generated: memory_usage_{operation}.svg")
 
-    def plot_compression_throughput(self, results: Dict, operation: str):
+    def plot_compression_throughput(self, results: Dict, operation: str) -> None:
         """
         Compression throughput = decomp_size / comp_ns
         For both READ and WRITE operations (device compresses on every I/O)
@@ -337,7 +337,7 @@ class GraphGenerator:
         n_types = len(self.COMPRESSION_TYPES)
 
         _, ax = plt.subplots(figsize=(16, 7))
-        x = np.arange(n_files)
+        x = arange(n_files)
         width = 0.8 / n_types
 
         for idx, comp_type in enumerate(self.COMPRESSION_TYPES):
@@ -348,9 +348,9 @@ class GraphGenerator:
             for test_file in test_files:
                 metrics_list = results[test_file][comp_type]
                 if not metrics_list:
-                    base_throughputs.append(0)
-                    copy_overheads.append(0)
-                    base_stds.append(0)
+                    base_throughputs.append(0.0)
+                    copy_overheads.append(0.0)
+                    base_stds.append(0.0)
                     continue
 
                 if operation == "read":
@@ -530,7 +530,7 @@ class GraphGenerator:
         plt.close()
         print(f"  Generated: compression_throughput_{operation}.svg")
 
-    def plot_decompression_throughput(self, results: Dict, operation: str):
+    def plot_decompression_throughput(self, results: Dict, operation: str) -> None:
         """
         Decompression throughput = comp_size / decomp_ns
         For both READ and WRITE operations (device decompresses on every I/O)
@@ -540,7 +540,7 @@ class GraphGenerator:
         n_types = len(self.COMPRESSION_TYPES)
 
         _, ax = plt.subplots(figsize=(16, 7))
-        x = np.arange(n_files)
+        x = arange(n_files)
         width = 0.8 / n_types
 
         for idx, comp_type in enumerate(self.COMPRESSION_TYPES):
@@ -551,9 +551,9 @@ class GraphGenerator:
             for test_file in test_files:
                 metrics_list = results[test_file][comp_type]
                 if not metrics_list:
-                    base_throughputs.append(0)
-                    copy_overheads.append(0)
-                    base_stds.append(0)
+                    base_throughputs.append(0.0)
+                    copy_overheads.append(0.0)
+                    base_stds.append(0.0)
                     continue
 
                 if operation == "read":
@@ -731,7 +731,7 @@ class GraphGenerator:
         plt.close()
         print(f"  Generated: decompression_throughput_{operation}.svg")
 
-    def plot_total_throughput(self, results: Dict, operation: str):
+    def plot_total_throughput(self, results: Dict, operation: str) -> None:
         """
         Total throughput = decomp_size / total_ns
         For READ: uses stats_r_total_ns and stats_r_decomp_size
@@ -743,7 +743,7 @@ class GraphGenerator:
         n_types = len(self.COMPRESSION_TYPES)
 
         _, ax = plt.subplots(figsize=(16, 7))
-        x = np.arange(n_files)
+        x = arange(n_files)
         width = 0.8 / n_types
 
         for idx, comp_type in enumerate(self.COMPRESSION_TYPES):
@@ -753,8 +753,8 @@ class GraphGenerator:
             for test_file in test_files:
                 metrics_list = results[test_file][comp_type]
                 if not metrics_list:
-                    means.append(0)
-                    stds.append(0)
+                    means.append(0.0)
+                    stds.append(0.0)
                     continue
 
                 if operation == "read":
@@ -855,7 +855,7 @@ class GraphGenerator:
         plt.close()
         print(f"  Generated: total_throughput_{operation}.svg")
 
-    def generate_all_graphs(self):
+    def generate_all_graphs(self) -> None:
         """Generate all graphs."""
         print("Loading results...")
         results = self.load_results()
@@ -915,12 +915,12 @@ class GraphGenerator:
         print(f"\nAll graphs saved to: {self.graph_dir}")
 
 
-def main():
-    parser = argparse.ArgumentParser(description="Generate LZ4 comparison graphs")
+def main() -> None:
+    parser = ArgumentParser(description="Generate LZ4 comparison graphs")
     parser.add_argument(
-        "--result", default="./experiment/result", help="Path to intermediate results directory"
+        "--result", default="./result", help="Path to intermediate results directory"
     )
-    parser.add_argument("--graph", default="./experiment/graph", help="Path to graph directory")
+    parser.add_argument("--graph", default="./graph", help="Path to graph directory")
 
     args = parser.parse_args()
 
