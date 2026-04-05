@@ -23,7 +23,6 @@ Experimental environment for comparing LZ4 compression variations in Linux kerne
 from argparse import ArgumentParser, Namespace
 from dataclasses import asdict, dataclass
 from json import dump
-from math import ceil
 from os import walk
 from pathlib import Path
 from shutil import rmtree
@@ -199,7 +198,7 @@ class LZ4Experiment:
 
     def _get_count(self, file_size: int) -> int:
         """Calculate count parameter for dd."""
-        return ceil(file_size / self.bs_bytes)
+        return file_size // self.bs_bytes
 
     def _run_dd_write(self, input_file: Path, count: int) -> bool:
         """Run dd write operation."""
@@ -303,7 +302,7 @@ class LZ4Experiment:
                 raise RuntimeError(f"DD read failed for {test_file}")
 
             # Verify integrity
-            if not self._verify_integrity(test_file, tmp_output, file_size):
+            if not self._verify_integrity(test_file, tmp_output, count * self.bs_bytes):
                 raise RuntimeError(f"Integrity check failed for {test_file}")
 
             # Collect statistics
