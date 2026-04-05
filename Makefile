@@ -20,7 +20,7 @@ COMPRESS_OBJ := $(OUTPUT_LIB)/$(COMPRESS_NAME).ko
 DECOMPRESS_OBJ := $(OUTPUT_LIB)/$(DECOMPRESS_NAME).ko
 BDEV_OBJ := $(OUTPUT_BDEV)/$(BDEV_NAME).ko
 
-BVEC_OBJ := $(PWD)/bvec.ko
+BVEC_OBJ := $(PWD)/bvec/blkproxy.ko
 
 TEST_DIR_NAME := test
 EXPERIMENT_DIR_NAME := experiment

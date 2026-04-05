@@ -33,12 +33,12 @@
 #define LZ4E_PR_WARN(fmt, ...) \
 	pr_warn("%s: " fmt "\n", LZ4E_MODULE_NAME, ##__VA_ARGS__)
 
-/* print formatted info to logs */
-#define LZ4E_PR_INFO(fmt, ...) \
-	pr_info("%s: " fmt "\n", LZ4E_MODULE_NAME, ##__VA_ARGS__)
-
 /* print formatted debug info to logs */
 #define LZ4E_PR_DEBUG(fmt, ...) \
 	pr_debug("%s: " fmt "\n", LZ4E_MODULE_NAME, ##__VA_ARGS__)
+
+/* print formatted info to logs */
+#define LZ4E_PR_INFO(fmt, ...) \
+	LZ4E_PR_DEBUG(fmt, ##__VA_ARGS__)
 
 #endif
