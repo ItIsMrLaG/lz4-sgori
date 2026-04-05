@@ -6,6 +6,8 @@ COMPRESS_NAME := $(LIB_NAME)_compress
 DECOMPRESS_NAME := $(LIB_NAME)_decompress
 BDEV_NAME := $(LIB_NAME)_bdev
 
+BVEC_NAME := blkproxy
+
 TARGET_ALL := $(PWD)
 TARGET_LIB := $(TARGET_ALL)/$(LIB_NAME)
 TARGET_BDEV := $(TARGET_ALL)/$(BDEV_NAME)
@@ -17,6 +19,8 @@ OUTPUT_BDEV := $(OUTPUT_ALL)/$(BDEV_NAME)
 COMPRESS_OBJ := $(OUTPUT_LIB)/$(COMPRESS_NAME).ko
 DECOMPRESS_OBJ := $(OUTPUT_LIB)/$(DECOMPRESS_NAME).ko
 BDEV_OBJ := $(OUTPUT_BDEV)/$(BDEV_NAME).ko
+
+BVEC_OBJ := $(PWD)/bvec.ko
 
 TEST_DIR_NAME := test
 EXPERIMENT_DIR_NAME := experiment
@@ -60,12 +64,14 @@ clean:
 
 .PHONY: insert
 insert:
+	insmod $(BVEC_OBJ)
 	insmod $(COMPRESS_OBJ)
 	insmod $(DECOMPRESS_OBJ)
 	insmod $(BDEV_OBJ)
 
 .PHONY: remove
 remove:
+	rmmod $(BVEC_NAME) || true
 	rmmod $(BDEV_NAME) || true
 	rmmod $(DECOMPRESS_NAME) || true
 	rmmod $(COMPRESS_NAME) || true

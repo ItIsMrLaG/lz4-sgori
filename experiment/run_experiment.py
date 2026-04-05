@@ -99,6 +99,7 @@ class LZ4Experiment:
         self.args = args
         self.bs_bytes = self._parse_bs(args.bs)
         self.proxy_dev = Path("/dev/lz4e0")
+        self.bvec_dev = Path("/dev/blkproxy")
         self.under_dev = args.under_dev
         self.tmp_dir = Path("./experiment/tmp")
 
@@ -167,8 +168,24 @@ class LZ4Experiment:
         if not self.proxy_dev.exists():
             raise RuntimeError(f"Proxy device {self.proxy_dev} not created")
 
+        print(f"Creating bvec-proxy device over {self.proxy_dev}...")
+        sysfs_param = Path("/sys/kernel/blkproxy/create")
+        with open(sysfs_param, "w") as f:
+            f.write(str(self.proxy_dev))
+        sleep(0.001)
+
+        if not self.bvec_dev.exists():
+            raise RuntimeError(f"Proxy device {self.bvec_dev} not created")
+
     def _remove_proxy_device(self) -> None:
         """Remove proxy device."""
+
+        print("Removing bvec proxy device...")
+        sysfs_param = Path("/sys/kernel/blkproxy/destroy")
+        with open(sysfs_param, "w") as f:
+            f.write("blkproxy")
+        sleep(0.001)
+
         print("Removing proxy device...")
         sysfs_param = Path("/sys/module/lz4e_bdev/parameters/unmapper")
         with open(sysfs_param, "w") as f:
@@ -205,7 +222,7 @@ class LZ4Experiment:
         cmd = [
             "dd",
             f"if={input_file}",
-            f"of={self.proxy_dev}",
+            f"of={self.bvec_dev}",
             f"bs={self.args.bs}",
             f"count={count}",
             "iflag=fullblock",
@@ -219,7 +236,7 @@ class LZ4Experiment:
         """Run dd read operation."""
         cmd = [
             "dd",
-            f"if={self.proxy_dev}",
+            f"if={self.bvec_dev}",
             f"of={output_file}",
             f"bs={self.args.bs}",
             f"count={count}",
