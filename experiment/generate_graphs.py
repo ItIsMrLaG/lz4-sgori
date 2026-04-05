@@ -229,12 +229,10 @@ class GraphGenerator:
         plt.close()
         print("  Generated: compression_ratio.svg")
 
-    def plot_memory_usage(self, results: Dict, operation: str) -> None:
+    def plot_memory_usage(self, results: Dict) -> None:
         """
         Average memory usage per successful request = mem_usage / (reqs_total - reqs_failed)
-        For READ: uses read metrics
-        For WRITE: uses write metrics
-        For OVERALL: uses combined metrics
+        Uses overall metrics (sum of read and write)
         """
         test_files = list(results.keys())
         n_files = len(test_files)
@@ -256,24 +254,13 @@ class GraphGenerator:
 
                 mem_per_req = []
                 for read_m, write_m in metrics_list:
-                    if operation == "read":
-                        successful_reqs = read_m.reqs_total - read_m.reqs_failed
-                        if successful_reqs > 0 and read_m.mem_usage > 0:
-                            mem = read_m.mem_usage / successful_reqs
-                            mem_per_req.append(mem / 1024)  # Convert to KB
-                    elif operation == "write":
-                        successful_reqs = write_m.reqs_total - write_m.reqs_failed
-                        if successful_reqs > 0 and write_m.mem_usage > 0:
-                            mem = write_m.mem_usage / successful_reqs
-                            mem_per_req.append(mem / 1024)  # Convert to KB
-                    else:  # overall
-                        total_mem = read_m.mem_usage + write_m.mem_usage
-                        total_reqs = read_m.reqs_total + write_m.reqs_total
-                        total_failed = read_m.reqs_failed + write_m.reqs_failed
-                        successful_reqs = total_reqs - total_failed
-                        if successful_reqs > 0 and total_mem > 0:
-                            mem = total_mem / successful_reqs
-                            mem_per_req.append(mem / 1024)  # Convert to KB
+                    total_mem = read_m.mem_usage + write_m.mem_usage
+                    total_reqs = read_m.reqs_total + write_m.reqs_total
+                    total_failed = read_m.reqs_failed + write_m.reqs_failed
+                    successful_reqs = total_reqs - total_failed
+                    if successful_reqs > 0 and total_mem > 0:
+                        mem = total_mem / successful_reqs
+                        mem_per_req.append(mem / 1024)  # Convert to KB
 
                 mean_val, std_val = self.calculate_stats(mem_per_req)
                 means.append(mean_val)
@@ -306,15 +293,9 @@ class GraphGenerator:
                         fontsize=7,
                     )
 
-        title_map = {
-            "read": "Memory Usage (Read Operation)",
-            "write": "Memory Usage (Write Operation)",
-            "overall": "Memory Usage (Read + Write)",
-        }
-
         ax.set_xlabel("Test Files", fontsize=12, fontweight="bold")
-        ax.set_ylabel("Average Memory Usage per Request (KB)", fontsize=12, fontweight="bold")
-        ax.set_title(title_map[operation], fontsize=12, fontweight="bold")
+        ax.set_ylabel("Memory Usage per Request (KB)", fontsize=12, fontweight="bold")
+        ax.set_title("Average Memory Usage (per I/O)", fontsize=13, fontweight="bold")
         ax.set_xticks(x)
         ax.set_xticklabels([Path(f).name for f in test_files], rotation=45, ha="right")
         ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))
@@ -322,10 +303,9 @@ class GraphGenerator:
         ax.set_axisbelow(True)
 
         plt.tight_layout()
-        output_path = self.graph_dir / f"memory_usage_{operation}.svg"
-        plt.savefig(output_path, format="svg", bbox_inches="tight")
+        plt.savefig(self.graph_dir / "memory_usage.svg", format="svg", bbox_inches="tight")
         plt.close()
-        print(f"  Generated: memory_usage_{operation}.svg")
+        print("  Generated: memory_usage.svg")
 
     def plot_compression_throughput(self, results: Dict, operation: str) -> None:
         """
@@ -869,47 +849,41 @@ class GraphGenerator:
         print("Generating graphs:")
 
         # 1. Compression ratio (overall only)
-        print("  1/13: Compression ratio (overall)")
+        print("  1/11: Compression ratio (overall)")
         self.plot_compression_ratio(results)
 
-        # 2-4. Memory usage (for read, write, and overall)
-        print("  2/13: Memory usage (read)")
-        self.plot_memory_usage(results, "read")
+        # 2. Memory Usage (overall only)
+        print("  2/11: Memory usage (overall)")
+        self.plot_memory_usage(results)
 
-        print("  3/13: Memory usage (write)")
-        self.plot_memory_usage(results, "write")
-
-        print("  4/13: Memory usage (overall)")
-        self.plot_memory_usage(results, "overall")
-
-        # 5-7. Compression throughput (for read, write, and overall)
-        print("  5/13: Compression throughput (read)")
+        # 3-5. Compression throughput (for read, write, and overall)
+        print("  3/11: Compression throughput (read)")
         self.plot_compression_throughput(results, "read")
 
-        print("  6/13: Compression throughput (write)")
+        print("  4/11: Compression throughput (write)")
         self.plot_compression_throughput(results, "write")
 
-        print("  7/13: Compression throughput (overall)")
+        print("  5/11: Compression throughput (overall)")
         self.plot_compression_throughput(results, "overall")
 
-        # 8-10. Decompression throughput (for read, write, and overall)
-        print("  8/13: Decompression throughput (read)")
+        # 6-8. Decompression throughput (for read, write, and overall)
+        print("  6/11: Decompression throughput (read)")
         self.plot_decompression_throughput(results, "read")
 
-        print("  9/13: Decompression throughput (write)")
+        print("  7/11: Decompression throughput (write)")
         self.plot_decompression_throughput(results, "write")
 
-        print(" 10/13: Decompression throughput (overall)")
+        print("  8/11: Decompression throughput (overall)")
         self.plot_decompression_throughput(results, "overall")
 
-        # 11-13. Total throughput (for read, write, and overall)
-        print(" 11/13: Total throughput (read)")
+        # 9-11. Total throughput (for read, write, and overall)
+        print("  9/11: Total throughput (read)")
         self.plot_total_throughput(results, "read")
 
-        print(" 12/13: Total throughput (write)")
+        print(" 10/11: Total throughput (write)")
         self.plot_total_throughput(results, "write")
 
-        print(" 13/13: Total throughput (overall)")
+        print(" 11/11: Total throughput (overall)")
         self.plot_total_throughput(results, "overall")
 
         print(f"\nAll graphs saved to: {self.graph_dir}")
